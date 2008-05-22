@@ -1,0 +1,2162 @@
+#!/usr/bin/perl
+
+# Copyright (C) 1998-2008  Samuel Stauffer <samuel@descolada.com>
+# 
+# See LICENSE and COPYING for license details.
+
+############################
+#
+# levels:
+#   200	= master
+#  *100	= secondary master, will eventually allow a dop type command
+#	  but only to add users and general bot maintenance
+#  *75	= general+trivadmin ( addsub, addqna )
+#   50	= general
+#   10	= lowest
+# * - not currently used
+#
+# --
+#  $uname	- name of user, taken from @userlist
+#  $password	- crypted password of user, taken from @userlist
+#  $unick	- nick of user
+#  $level	- level of user
+#  $uflags	- flags for user
+#  $from	- where the message came from..
+#		  if private then = $unick, else = channel
+#  $to		- who/where the message was to..
+#		  if private then = satel, else = channel
+#  $usr		- address of nick,  i.e.: someone@somewhere32-22.com
+#  $uad		- address with wildcards: someone@somewhere..-...com
+#		  taken from @userlist
+#  $um		- address with wildcards: someone@somewhere..-...com
+#		  generated, all numbers = .
+#  $cflags	- flags for channel where message came from
+#		  or -1 if from unknown channel or not from a channel
+#
+# --
+#
+# @userlist format
+#	user name:password(crypted):lastseen date/time:level:uflags:host masks:validated
+#   when saving to file, ":validated" gets chopped off and is not saved
+#	uflags (user flags: user can set these flags)
+#		bit	desc
+#		0	+autoop		auto op on channel join
+#		1	+biff		tell if there's new messages on join
+#
+#
+# @messages format
+#	to:from:date/time sent:msg
+#
+#
+# @channels format
+#	name:key:flags:userlist
+#
+#   flags (bits):
+#     0 - +kickprot
+#     1 - +secondary
+#
+#   userlist:
+#     people allowed to access the channel (showkey + channel commands)
+#
+####
+
+use Fcntl;
+#use strict;
+use IO::Socket;
+use Socket;
+#use Text::Soundex;
+#use Text::Metaphone;
+use Text::ParseWords;
+use Chatbot::Eliza;
+#use NDBM_File;
+
+fork && exit;
+
+my(@uflags) = ("autoop","biff");
+my(@cflags) = ("kickprot","secondary","topicprot");
+
+my $respawn	= 1;			# reconnect if server closes connection
+my $curserver	= -1;			# cur server in @serverlist
+my $uptime	= time;			# time running
+my($spawntime);				# time connected to current server
+
+respawn:	# no, there are no gotos
+while ($respawn) {
+
+$spawntime	= time;
+
+use vars qw($unick $level $password $uname $uflags @userlist $handle $idle);
+use vars qw($uad $um $usr $to $from $cflags $valid @messages @channels);
+
+my ($linem, $tmp, @bklist, @DCCchats, @allowlist);
+
+my $url_catch	= 0;
+
+my $connected	= 0;
+
+# execute_IT
+my $exectimeout	= 30;			# timeout for execute_IT, 0=no timeout
+
+# DCC
+my $accept_dcc	= 0;			# automatically accept DCCs
+my $a_dcc_send	= 0;
+my $a_dcc_rqst	= 0;
+my $dccdir	= "satel.dcc";
+
+my $triv_on	= 0;
+my $trivstats	= 0;
+
+my $showpings	= 0;			# log "PING? PONG!\n" on a ping from the server
+my $autoop	= 0;			# automatically op people with a level of 50+
+my $autovoice	= 0;			# automatically voice all people joining the channel
+my $autorejoin	= 1;			# automatically rejoin channel after kick
+my $rejoindelay	= 2;			# seconds to wait before rejoining channel after kick
+my $url_from	= $nick;		# user that requested geturl
+
+my $doppass	= "aqp/9w2zhPjCI";
+
+require satel_config;
+require satel_global;
+require satel_forth;
+require satel_yarn;
+require satel_acro;
+require satel_messages;
+require satel_vote;
+require satel_db;
+require satel_mud;
+require satel_chords;
+require satel_slashdot;
+require satel_lang;
+require satel_trivia;
+require satel_weather;
+
+my %config;
+
+sub parse_config {
+	my $a,$l,$t;
+
+	open(TEMP,$configfile) or die "Can't open config file";
+	while ($a = <TEMP>) {
+		chomp $a;
+		($a) = split("#",$a);
+		($l,$t) = split("=",$a);
+		$l =~ s/\s//g;
+		next if ($l eq "");
+		die "Invalid config tag: $l" if ($l =~ /\W/);
+		$t =~ s/^\s*//;
+		$t =~ s/\s*$//;
+		$t =~ s/^\"//;
+		$t =~ s/\"$//;
+		$config{$l} = $t;
+	}
+	close(TEMP) or die "Can't close config file";
+}
+
+sub getconfig {
+	return if ($level < 250);
+
+	if ($config{$_[0]}) {
+		priv_msg($from,"$_[0] = $config{$_[0]}");
+	} else {
+		priv_msg($from,"no config variable $_[0]");
+	}
+}
+
+sub setconfig {
+	return if ($level < 250);
+
+	if ($config{$_[0]}) {
+		priv_msg($from,"$_[0] was $config{$_[0]}");
+	}
+	priv_msg($from,"$_[0] is now $_[1]");
+	$config{$_[0]} = $_[1];
+}
+
+sub snick {
+	return if ($level < 200);
+
+	print_IRC("NICK $_[0]\n");
+}
+
+sub sectotime {
+	my $l = $_[0];
+	my $seconds = $l % 60;
+	$l = int($l/60);
+	my $minutes = $l % 60;
+	$l = int($l/60);
+	my $hours = $l % 24;
+	$l = int($l/24);
+	my $days = $l;
+	return "$days days $hours:$minutes:$seconds";
+}
+
+sub userinfo {
+	return if ($level < 10);
+	my($i,$j,$f,@a);
+	my $whos = lc $uname;
+	my $sp = "0";
+	if (@_) {
+		$whos = lc $_[0];
+		if ($level >= 200) {
+			$sp = $_[1];
+		}
+	}
+	if (($whos ne $uname) && ($level < 200)) {
+		priv_msg($from,"$unick, you are only allowed to see your own info");
+		return;
+	}
+	foreach $i (@userlist) {
+		@a = split(":",$i);
+		if (lc $a[0] eq $whos) {
+			priv_msg($from,"User name.....[$a[0]]");
+			priv_msg($from,"Password......[$a[1]]") if ($sp);
+			priv_msg($from,"Lastseen......[$a[2]]");
+			priv_msg($from,"Level.........[$a[3]]");
+#			priv_msg($from,"Flags.........[$a[4]]");
+			print_IRC("PRIVMSG $from :Flags.........[");
+			$f = $a[4];
+			foreach $j (@uflags) {
+#				print_IRC("+$j ") if ($f & 1);
+				if (($f & 1) > 0) {
+					print_IRC(" +");
+				} else {
+					print_IRC(" -");
+				}
+				print_IRC($j);
+				$f >>= 1;
+			}
+			print_IRC("]\n");
+			priv_msg($from,"Host masks....[".join(", ",split(";",$a[5]))."]");
+			return;
+		}
+	}
+	priv_msg($from,"$unick, I do not know $whos");
+}
+
+####
+# tells a user their user name
+####
+sub whoami {
+	return if ($level < 10);
+	priv_msg($from,"$unick, you are $uname\n");
+}
+
+### load @userlist from $usersfile
+sub load_userlist {
+	@userlist = ();
+	open TEMP, $usersfile or die "Can't open userlist: $!";
+	while (<TEMP>) {
+		chomp;
+		push @userlist,"$_:0";
+	}
+	close TEMP or die "Can't close userlist: $!";
+}
+
+### save @userlist to $usersfile
+sub save_userlist {
+	my ($i,@a);
+
+	open(TEMP,">$usersfile");
+	foreach $i (@userlist) {
+		@a = split(":",$i);
+		pop @a;
+		print TEMP join(":",@a)."\n";
+	}
+#	print TEMP join("\n",@userlist);
+	close(TEMP);
+	chmod 0600, $usersfile;
+}
+
+### load @channels from $chanfile
+sub load_channels {
+	@channels = ();
+	open(TEMP,$chanfile) || return;
+	while (<TEMP>) {
+		chomp;
+		push @channels,$_;
+	}
+	close(TEMP);
+}
+
+### save @channels to $chanfile
+sub save_channels {
+	my($i);
+
+	open(TEMP,">$chanfile");
+	print TEMP join("\n",@channels);
+	close(TEMP);
+	chmod(0600,$chanfile);
+}
+
+# (address mask, username, password, access level, flags)
+sub add_user {
+        return if ($#_ < 3);
+#	return if ($_[3] > 75);
+#	my($i);
+#	($i) = split(":",$_[0]);
+	push @userlist,$_[1].":".crypt($_[2],"fs").":".time.":".$_[3].":".$_[4].":".$_[0].":"."0";
+}
+
+# (user, level)
+sub setlevel {
+	return if ($level < 250);
+
+	if ($#_ < 1) {
+		priv_msg($from, "syntax: setlevel [user] [level]");
+		return;
+	}
+
+	set_level($_[0],$_[1]);
+}
+
+# (username, level)
+sub set_level {
+	return if ($#_ < 1);
+	my($i,@tmpo);
+	foreach $i (@userlist) {
+		@tmpo = split(":",$i,6);
+		if (uc($tmpo[0]) eq uc($_[0])) {
+			$tmpo[3] = $_[1];
+			$i = join(":",@tmpo);
+		}
+	}
+}
+
+# (username, flags)
+sub set_uflags {
+	return if ($#_ < 1);
+	my($i,@tmpo);
+	foreach $i (@userlist) {
+		@tmpo = split(":",$i,6);
+		if (uc($tmpo[0]) eq uc($_[0])) {
+			$tmpo[4] = $_[1];
+			$i = join(":",@tmpo);
+		}
+	}
+}
+
+# (user, address list)
+sub setaddress {
+	return if ($level < 200);
+
+	if ($#_ < 1) {
+		priv_msg($from,"syntax: setaddress [user] [address;list]");
+		return;
+	}
+
+	my $r = set_address($_[0],$_[1],$level);
+	if (!$r) {
+		priv_msg($from,"$unick, no user by the name $_[0]");
+	} elsif ($r = 1) {
+		priv_msg($from,"$unick, $_[0] has a too high level for you to set their address");
+	} elsif ($r = 2) {
+		priv_msg($from,"$unick, the address list of $_[0] has been set");
+	}
+}
+
+# (username, address list, <level restrict>)
+sub set_address {
+	return -1 if ($#_ < 1);
+
+	my($i,@tmpo,$r);
+
+	$r = 10000;
+	if ($_[2]) {
+		$j = $_[2];
+	}
+
+	foreach $i (@userlist) {
+		@tmpo = split(":",$i);
+		if (uc($tmpo[0]) eq uc($_[0])) {
+			return 1 if ($tmpo[3] >= $r);
+			$tmpo[5] = $_[1];
+			$i = join(":",@tmpo);
+			return 2;
+		}
+	}
+
+	return 0;
+}
+
+sub shelp {
+	return if ($level < 10);
+	my($helplevel,$a,$b,$c,$d,$i,$cmd);
+	$helplevel = 0;
+	$cmd       = 0;
+	$i         = 0;
+	if ($#_ >= 0) {
+		$cmd = 1;
+		$c   = $_[0];
+	}
+	if ((!$cmd) && ($level < 200)) {
+		priv_msg($from,"syntax: shelp <command>");
+		return;
+	}
+	open(TEMPFILE,$helpfile) || return;
+	while (<TEMPFILE>) {
+		if ($_ =~ /^!LEVEL/) {
+			($a,$helplevel) = split(' ',$_,2);
+			last if ($helplevel > $level);
+			if (!$cmd) {
+				print_IRC("\n") if ($i > 0);
+				priv_msg($from,"* level $helplevel command");
+				$i = 0;
+			}
+		} elsif ($_ =~ /^!COMMAND/) {
+			($a,$b,$d) = split(' ',$_,3);
+			if ($cmd == 1) {
+				if (lc($b) eq lc($c)) {
+					$cmd = 2;
+					priv_msg($from,"syntax: $b $d");
+				}
+			} elsif ($cmd == 2) {
+				$cmd = 3;
+				last;
+			} elsif (!$cmd) {
+				if ($i == 0) {
+					print_IRC("PRIVMSG $from :    $b");
+					$i = 1;
+				} elsif ($i < 6) {
+					print_IRC(",$b");
+					$i++;
+					if ($i == 6) {
+						print_IRC("\n");
+						$i = 0;
+					}
+				}
+			}
+		} elsif ($cmd == 2) {
+			priv_msg($from,$_);
+		}
+	}
+	if ($cmd == 1) {
+		priv_msg($from,"Command \"$c\" not found");
+	}
+	print_IRC("\n") if ($i > 0);
+	close(TEMPFILE);
+}
+
+############################ OPERATOR COMMANDS #############################
+# (name, address1;address2;...)
+sub adduser {
+	return if ($level < 200);
+#	if (($uflags & 1) == 0) {
+#		priv_msg($from,"$unick, You are not allowed to add users.");
+#		return;
+#	}
+	if ($#_ < 1) {
+		priv_msg($from,"$unick, syntax: adduser name address1;address2;...");
+		return;
+	}
+	($na) = split(":",$_[0],2);
+	($ad) = split(":",$_[1],2);
+	if ($na =~ /\W/) {
+		priv_msg($from,"$unick, name may only contain alphanumerics or an underscore");
+		return;
+	}
+	add_user($ad,$na,"NoPass",50,2);
+}
+
+#######################################################################
+
+sub execute_IT {
+	my($i) = 0;
+	$SIG{CHLD} = sub { wait };
+	if (!fork) {
+		if ($exectimeout != 0) {
+			$SIG{ALRM} = sub { exit 0 };
+			alarm $exectimeout;
+		}
+		open(PROGPIPE,"$_[0] |");
+		while (<PROGPIPE>) {
+			if ($i++ > 15) {
+				$i = 0;
+				sleep 5;
+			}
+			priv_msg($from,$_);
+		}
+		close(PROGPIPE);
+		exit 0;
+	}
+}
+
+# (flags)
+sub setflags {
+	return if ($level < 50);
+
+	my @flags = @_;
+	my(@a,$i,$c,$j,$t,$f);
+	foreach $i (@flags) {
+		$i = lc($i);
+		$c = substr($i,0,1);
+		$j = substr($i,1,length($i)-1);
+
+		$f = 1;
+		foreach $t (@uflags) {
+			if ($j eq $t) {
+				if ($c eq "+") {
+					$uflags |= $f;
+				} elsif ($c eq "-") {
+					$uflags &= !$f;
+				}
+				last;
+			}
+			$f <<= 1;
+		}
+	}
+
+#	priv_msg($from,"$nick, new flags = $uflags");
+
+	set_uflags($uname,$uflags);
+
+#	foreach $i (@userlist) {
+#		(@a) = split(":",$i);
+#		if ($a[0] eq $uname) {
+#			$a[4] = $uflags;
+#			$i = join(":",@a);
+#			last;
+#		}
+#	}
+
+	priv_msg($from,"flags set");
+}
+
+########################### Passwords/Login #################################
+sub changepassword {
+	return if ($level < 10);
+
+	my (@a,$wtmp);
+
+	foreach $wtmp (@userlist) {
+		(@a) = split(":",$wtmp);
+		if ($a[0] eq $uname) {
+			$a[1] = crypt(join(" ",@_),"ge");
+			$wtmp = join(":",@a);
+			priv_msg($from,"password set");
+			last;
+		}
+	}
+}
+
+sub set_validate {
+	my ($wtmp,@a);
+	foreach $wtmp (@userlist) {
+		(@a) = split(":",$wtmp);
+		if ($a[0] eq $_[0]) {
+			$a[6] = $_[1];
+			$wtmp = join(":",@a);
+			last;
+		}
+	}
+}
+
+sub doplogin {
+	return if ($level < 250);
+
+	my ($p) = crypt(join(" ",@_),substr($doppass,0,2));
+	if ($p eq $doppass) {
+		priv_msg($from,"dop use authorized");
+		set_validate($uname,2);
+	} else {
+		priv_msg($from,"invalid dop login, logging this event");
+		print_LOG("invalid password for dop login by $unick ($uname)\n");
+		set_validate($uname,1);
+	}
+}
+
+sub doplogout {
+	return if ($level < 250);
+
+	priv_msg($from,"dop use no longer authorized");
+	set_validate($uname,1);
+}
+
+sub login {
+	return if ($level < 5);
+
+	my ($p) = crypt(join(" ",@_),substr($password,0,2));
+	if ($p eq $password) {
+		priv_msg($from,"Authorization Accepted");
+		set_validate($uname,1);
+	} else {
+#		if ($showfaillogin) {
+		if ($config{showfaillogin}) {
+			priv_msg($from,"Password is incorrect");
+		}
+		set_validate($uname,0);
+	}
+}
+
+sub logout {
+	return if ($level < 10);
+
+	priv_msg($from,"Logged out");
+	set_validate($uname,0);
+}
+
+############################ Channel Commands ################################
+
+sub find_channel {
+	return () unless(@_);
+
+	my $chan = lc($_[0]);
+	my ($t,@a);
+	foreach $t (@channels) {
+		@a = split(":",$t);
+		if (lc($a[0]) eq $chan) {
+			return @a;
+		}
+	}
+	return ();
+}
+
+sub chan_allowed {
+	return 0 unless($#_ > 0);
+
+	my($chan,$name) = @_;
+
+	my @a = find_channel($chan);
+	return 0 unless(@a);
+
+	my(@b,$i);
+
+	@b = split(";",$a[3]);
+	foreach $i (@b) {
+		if (lc($i) eq $name) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+sub chanallowlist {
+	return if ($level < 10);
+
+	my $name = lc (@_?$_[0]:$uname);
+	my $on = ($name eq lc($uname)?"you have":"$name has");
+	my(@a,@b,$i,$j,$s);
+	$s = "";
+	foreach $i (@channels) {
+		@a = split(":",$i);
+		@b = split(";",$a[3]);
+		foreach $j (@b) {
+			if (lc($j) eq $name) {
+				$s = "$s$a[0],";
+			}
+		}
+	}
+	if ($s ne "") {
+		priv_msg($from,"$unick, $on access to: ".substr($s,0,$#s));
+	} else {
+		priv_msg($from,"$unick, the name $name is either unknown to me or does not have access to any channels");
+	}
+}
+
+sub chanprivs {
+	return if ($level < 10);
+
+	my $chan = $from;
+	if (defined($_[0])) {
+		$chan = $_[0];
+	} elsif ($from eq $unick) {
+		priv_msg($from,"Either message me from a channel or tell me which channel");
+		return;
+	}
+	if (chan_allowed($chan,$uname)) {
+		priv_msg($from,"You have access to the channel");
+	} else {
+		if (find_channel($chan)) {
+			priv_msg($from,"You do not have privileges for the channel");
+		} else {
+			priv_msg($from,"No such channel");
+		}
+	}
+}
+
+# (channel)
+sub get_channelflags {
+	my($i,@tmp);
+
+	return -1 if ($#_ < 0);
+	foreach $i (@channels) {
+		@tmp = split(":",$i);
+		return $tmp[2] if (lc($tmp[0]) eq lc($_[0]));
+	}
+	return -1;
+}
+
+# (channel, flags)
+sub set_channelflags {
+	my($i,@tmp);
+
+	return if ($#_ < 1);
+	foreach $i (@channels) {
+		@tmp = split(":",$i);
+		if (lc($tmp[0]) eq lc($_[0])) {
+			$tmp[2] = $_[1];
+			$i = join(":",@tmp);
+			return;
+		}
+	}
+}
+
+# (channel, key)
+sub set_channelkey {
+	my($i, @tmp);
+
+	return if ($#_ < 1);
+	foreach $i (@channels) {
+		@tmp = split(":",$i);
+		if (lc($tmp[0]) eq lc($_[0])) {
+			$tmp[1] = $_[1];
+			$i = join(":",@tmp);
+			return;
+		}
+	}
+}
+
+# (channel, user)
+sub chanadduser {
+	return if ($level < 200);
+
+	if ($#_ < 1) {
+		priv_msg($from, "syntax: chanadduser [channel] [user]");
+		return;
+	}
+
+	my $a = chan_adduser($_[0],$_[1]);
+	if (!$a) {
+		priv_msg($from, "No channel by the name $_[0]");
+	} elsif ($a == 1) {
+		priv_msg($from, "$_[1] added to $_[0] user list");
+	}
+}
+
+# (channel, user)
+sub chan_adduser {
+	my($i, @tmp);
+
+	return -1 if ($#_ < 1);
+	foreach $i (@channels) {
+		@tmp = split(":",$i);
+		if (lc($tmp[0]) eq lc($_[0])) {
+			if ($tmp[3] ne "") {
+				$tmp[3] = "$tmp[3];$_[1]";
+			} else {
+				$tmp[3] = $_[1];
+			}
+			$i = join(":",@tmp);
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+# (channel, user)
+sub chandeluser {
+	return if ($level < 200);
+
+	if ($#_ < 1) {
+		priv_msg($from, "syntax: chandeluser [channel] [user]");
+		return;
+	}
+
+	my $a = chan_deluser($_[0],$_[1]);
+	if (!$a) {
+		priv_msg($from, "No channel by the name $_[0]");
+	} elsif ($a == 1) {
+		priv_msg($from, "No user by the name $_[1] in $_[0] user list");
+	} elsif ($a == 2) {
+		priv_msg($from, "$_[1] removed from $_[0] user list");
+	}
+}
+
+# (channel, user)
+sub chan_deluser {
+	my($i,$j,$k,@tmp,@a,@b);
+
+	return -1 if ($#_ < 1);
+	foreach $i (@channels) {
+		@tmp = split(":",$i);
+		if (lc($tmp[0]) eq lc($_[0])) {
+			return 1 unless ($tmp[3] =~ /$_[1]/i);
+			@a = split(";",$tmp[3]);
+			@b = ();
+			$k = 0;
+			foreach $j (@a) {
+				if (!($j =~ /^$_[1]$/i)) {
+					@b[$#b+1] = $j;
+				} else {
+					$k++;
+				}
+			}
+			$tmp[3] = join(";",@b);
+			$i = join(":",@tmp);
+			if ($k > 0) {
+				return 2;
+			} else {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+sub channellist {
+	return if ($level < 200);
+
+	my $l = (@_?$_[0]:0);
+
+	my($i,@tmp);
+	foreach $i (@channels) {
+		@tmp = split(":",$i);
+		priv_msg($from,join(":",@tmp[0..$l]));
+	}
+}
+
+# (channel)
+sub channelinfo {
+	return if ($level < 200);
+
+	my($f, $i, @tmp);
+
+	foreach $i (@channels) {
+		@tmp = split(":",$i);
+		if (lc($tmp[0]) eq lc($_[0])) {
+			priv_msg($from,"Channel name....[$tmp[0]]");
+			priv_msg($from,"Key.............[$tmp[1]]");
+#			priv_msg($from,"Flags...........[$tmp[2]]");
+			print_IRC("PRIVMSG $from :Flags...........[");
+			$f = $tmp[2];
+			foreach $j (@cflags) {
+#				print_IRC("+$j ") if ($f & 1);
+				if (($f & 1) > 0) {
+					print_IRC(" +");
+				} else {
+					print_IRC(" -");
+				}
+				print_IRC($j);
+				$f >>= 1;
+			}
+			print_IRC("]\n");
+			priv_msg($from,"Users...........[$tmp[3]]");
+			return;
+		}
+	}
+
+	priv_msg($from,"No such channel");
+}
+
+# (channel): 0 - no channel by that name, 1 - successful
+#NOT DONE - remove this comment when it's finished
+sub channel_sub {
+	return 1 if ($#_ < 0);
+
+	my $chan = lc($_[0]);
+	my $j = 0;
+	my $i;
+	foreach $i (@channels) {
+		@t = split(":",$i);
+		if ($t[0] eq $chan) {
+			
+			return 0;
+		}
+		$j++;
+	}
+	return 2;
+}
+
+# (channel, flags, users, key)
+sub addchannel {
+	return if ($level < 200);
+
+	if ($#_ < 3) {
+		priv_msg($from,"syntax: addchannel [channel] [flags] [users] <key>");
+		return;
+	}
+
+	my($chan,$flags,$users,$key) = @_;
+	if (!defined($key)) {
+		$key = "";
+	}
+	if (!($chan =~ /^#/)) {
+		priv_msg($from,"$unick, channel name must start with a #");
+		return;
+	}
+
+	if (channel_add($chan,$key,$flags,$users) == 2) {
+		priv_msg($from,"$unick, channel $chan is already in the channel list");
+	} else {
+		priv_msg($from,"$unick, channel $chan has been added to the channel list");
+	}
+}
+
+# (channel, key, flags, users)
+sub channel_add {
+	return 1 if ($#_ < 2);
+
+	my $chan = lc($_[0]);
+	my($key) = split(":",$_[1],2);
+	my($flags) = split(":",$_[2],2);
+	my($users) = split(":",$_[3],2);
+
+	my $i,@t;
+	foreach $i (@channels) {
+		@t = split(":",$i);
+		return 2 if ($t[0] eq $chan);
+	}
+
+	push @channels,"$chan:$key:$flags:$users";
+
+
+	save_channels;
+
+	return 0;
+}
+
+sub joinchannel {
+	return if ($level < 200);
+	unless(@_) {
+		priv_msg($from,"$unick, syntax: joinchannel [channel] <key>");
+		return;
+	}
+	my $chan = $_[0];
+	print_IRC("JOIN $chan $_[1]\n");
+}
+
+sub partchannel {
+	return if ($level < 200);
+	unless(@_) {
+		priv_msg($from,"$unick, syntax: partchannel [channel] <remove>");
+		return;
+	}
+	my $chan = $_[0];
+	print_IRC("PART $chan\n");
+	if ($_[1]) {
+		my $i,@t,@a;
+		@a = ();
+		foreach $i (@channels) {
+			@t = split(":",$i);
+			if (lc($t[0]) ne lc($chan)) {
+				push @a,$i;
+			}
+		}
+		@channels = @a;
+	};
+}
+
+sub cyclechannel {
+	return if ($level < 200);
+	unless(@_) {
+		priv_msg($from,"$unick, syntax: cyclechannel [channel] <key>");
+		return;
+	}
+	print_IRC("PART $_[0]\n");
+	sleep 5;
+	print_IRC("JOIN $_[0] $_[1]\n");
+}
+
+sub _showkey {
+	return if ($level < $config{level_showkey});
+	my($t,@a,$i,$j,@t);
+	$j = 0;
+	foreach $t (@channels) {
+		@a = split(":",$t);
+		if ($a[1] ne "") {
+			@t = split(";",$a[3]);
+			foreach $i (@t) {
+				if (lc($i) eq lc($uname)) {
+					priv_msg($unick,sprintf($lang[0],($a[0],$a[1])));
+					$j++;
+					last;
+				}
+			}
+		}
+	}
+	priv_msg($unick,$lang[1]) if (!$j);
+}
+
+sub naytaavain {
+	local(@lang) = (
+		'Avain canavalle %s on: %s',
+		'Ei-oo avainta');
+	_showkey(@_);
+}
+
+sub montruklavo {
+	local(@lang) = (
+		'La klavo al %s estas: %s',
+		'Ne klavos por vi');
+	_showkey(@_);
+}
+
+sub showkey {
+	local(@lang) = (
+		'The key to %s is: %s',
+		'No keys available');
+	_showkey(@_);
+}
+
+#############################################################################
+
+sub spawntime {
+	return if ($level < 10);
+	priv_msg($from,"I have been connected to $serverlist[$curserver] for ".sectotime(time-$spawntime));
+}
+
+sub suptime {
+	return if ($level < 10);
+	priv_msg($from,"I have been up for ".sectotime(time-$uptime));
+}
+
+sub gmtime {
+	return if ($level < 10);
+	priv_msg($from,"$unick, ".gmtime()." GMT");
+}
+
+sub quit_IRC {
+	print_IRC("QUIT :$_[0]\n");
+	$respawn = 0;
+}
+
+sub lastseen {
+	return if ($level < 10);
+	if ($#_ < 0) {
+		priv_msg($from,"$unick, lastseen needs a name\n");
+		return;
+	}
+	my($wtmp,$o,$p,@q,$r,$l,$n,$c,$days,$hours,$minutes,$seconds);
+	$n = lc($_[0]);
+	foreach $wtmp (@userlist) {
+		($o,$p,$l,$r,$c,@q) = split(":",$wtmp);
+		if (lc($o) eq $n) {
+#			$l = (time-$l);
+#			$seconds = $l % 60;
+#			$l = int($l/60);
+#			$minutes = $l % 60;
+#			$l = int($l/60);
+#			$hours = $l % 24;
+#			$l = int($l/24);
+#			$days = $l;
+#			priv_msg($from,"$unick, $n was last seen $days days $hours:$minutes:$seconds ago");
+			priv_msg($from,"$unick, $n was last seen ".sectotime(time-$l)." ago");
+			return;
+		}
+	}
+	priv_msg($from,"$unick, i do not know $n");  
+}
+
+sub is_User {
+	my($wtmp,$utmp,$us,@q,@a);
+	$usr = $_[0];
+	$level = -1;
+	$uflags = 0;
+	$uname = "NOUSER";
+	$valid = 0;
+	$uad = "";
+#	$us = join("",split("~",$usr));
+	if ($usr =~ /^~/) {
+		$us = substr($usr,1,length($usr)-1);
+	} else {
+		$us = $usr;
+	}
+	foreach $wtmp (@userlist) {
+		@a = split(":",$wtmp);
+		@q = split(";",$a[5]);
+		foreach $utmp (@q) {
+			if ($us  =~ /^$utmp$/i) {
+#				$uname 		= $o;
+#				$password 	= $p;
+#				$uad 		= $utmp;
+#				$level 		= $r;
+#				$uflags 	= $c;
+#				$l 		= time;
+#				$valid		= $v;
+#				$wtmp 		= join(":",$o,$p,$l,$r,$c,$y,$v);
+
+				$uname		= $a[0];
+				$password	= $a[1];
+				$uad		= $utmp;
+				$level		= $a[3];
+				$uflags		= $a[4];
+				$a[2]		= time;
+				$valid		= $a[6];
+				$wtmp		= join(":",@a);
+				if (!$valid) {
+					my ($e) = crypt("NoPass",substr($password,0,2));
+					if ($e eq $password) {
+						set_validate($uname,1);
+					} else {
+						$level = 5;
+					}
+				}
+				return;
+			}
+		}
+	}
+}
+
+sub montrunivelo {
+	return if ($level < 10);
+	my($i,@a);
+	if ($#_ >= 0) {
+		foreach $i (@userlist) {
+			(@a) = split(':', $i);
+			if (lc($_[0]) eq lc($a[0])) {
+				priv_msg($from, "$unick, la nivelo por $a[0] estas $a[3]");
+				return;
+			}
+		}
+		priv_msg($from, "$unick, mi ne konas $_[0]");
+	}
+	else {
+		priv_msg($from, "$unick, via nivelo estas $level.");
+	}
+}
+sub showlevel {
+	return if ($level < 10);
+	my($i,@a);
+	if ($#_ >= 0) {
+		foreach $i (@userlist) {
+			(@a) = split(":",$i);
+			if (lc($_[0]) eq lc($a[0])) {
+				priv_msg($from,"$unick, the level for $a[0] is $a[3]");
+				return;
+			}
+		}
+		priv_msg($from,"$unick, I do not know $_[0]");
+	} else {
+		priv_msg($from,"$unick, your level is $level.");
+	}
+}
+
+sub chan_cmd {
+	my $chan = $from;
+	if (defined($_[2]) && ($_[2] =~ /^#/)) {
+		$chan = $_[2];
+	} elsif ($from eq $unick) {
+		priv_msg($unick,"You must message me from the channel or tell me which channel.");
+		return;
+	}
+
+	if (chan_allowed($chan,$uname)) {
+		print_IRC("$_[0] $chan $_[1]");
+	} else {
+		priv_msg($from,"You do not have privileges for the channel");
+	}
+}
+
+
+sub tellfortune {
+	return if ($level < $config{level_fortune});
+	if (@_ > 0) {
+		my($i,$s);
+		$s = "";
+		for ($i=0;$i<@_;$i++) {
+			$tmp = lc substr($_[$i],0,1);
+			if (index("aslo",$tmp) >= 0) {
+				$s = "$s -$tmp";
+			}
+		}
+		print_LOG("/usr/games/fortune $s\n");
+		execute_IT("/usr/games/fortune$s");
+	} else {
+		execute_IT("/usr/games/fortune -a");
+	}
+}
+
+sub set_uname {
+# ( fromuname, touname )
+	return unless(@_);
+
+	my $fromu = lc($_[0]);
+	my $tou = lc($_[1]);
+	my $i,@t;
+
+	foreach $i (@userlist) {
+		@t = split(":",$i);
+		if (lc($t[0]) eq $fromu) {
+			$t[0] = $tou;
+			$i = join(":",@t);
+			last;
+		}
+	}
+
+	foreach $i (@messages) {
+		@t = split(":",$i,5);
+		if (lc($t[0]) eq $fromu) {
+			$t[0] = $tou;
+		}
+		if (lc($t[1]) eq $fromu) {
+			$t[1] = $tou;
+		}
+		$i = join(":",@t);
+	}
+
+	&save_userlist;
+	&save_messages;
+}
+sub inviteme {
+	return if ($level < 50);
+	unless (@_) {
+		priv_msg($from,"syntax: inviteme [#channel]\n");
+		return;
+	}
+	$chan = $_[0];
+	print_IRC("INVITE $unick $_[0]\n");
+}
+
+sub voiceme {
+	return if ($level < 50);
+	chan_cmd("MODE","+v $unick\n",$_[0]);
+}
+
+sub devoiceme {
+	return if ($level < 50);
+	chan_cmd("MODE","-v $unick\n",$_[0]);
+}
+
+sub opme {
+	return if ($level < 50);
+	chan_cmd("MODE","+o $unick\n",$_[0]);
+}
+
+sub deopme {
+	return if ($level < 50);
+	chan_cmd("MODE","-o $unick\n",$_[0]);
+}
+
+sub sop {
+	return if ($level < 50);
+	my $chan = $from;
+	if ($_[0] =~ /^#/) {
+		$chan = shift @_;
+	}
+	if ($chan eq $unick) {
+		priv_msg($from,"You must message me from the channel or tell me which channel.");
+		return;
+	}
+	if (!chan_allowed($chan,$uname)) {
+		priv_msg($from,"You do not have privileges for the channel");
+		return;
+	}
+	my $i;
+	my $j = 0;
+	print_IRC("MODE $chan +oooo ");
+	foreach $i (@_) {
+		print_IRC("$i ");
+		if (++$j > 3) {
+			print_IRC("\nMODE $chan +oooo ");
+			$j = 0;
+		}
+	}
+	print_IRC("\n");
+}
+
+sub sdeop {
+	return if ($level < 50);
+	my $chan = $from;
+	if ($_[0] =~ /^#/) {
+		$chan = shift @_;
+	}
+	if ($chan eq $unick) {
+		priv_msg($from,"You must message me from the channel or tell me which channel.");
+		return;
+	}
+	my $i;
+	my $j = 0;
+	print_IRC("MODE $chan -oooo ");
+	foreach $i (@_) {
+		print_IRC("$i ");
+		if (++$j > 3) {
+			print_IRC("\nMODE $chan -oooo ");
+			$j = 0;
+		}
+	}
+	print_IRC("\n");
+}
+
+sub skick {
+	return if ($level < 50);
+	my $chan = $from;
+	if ($_[0] =~ /^#/) {
+		$chan = shift @_;
+	}
+	if ($chan eq $unick) {
+		priv_msg($from,"You must message me from the channel or tell me which channel.");
+		return;
+	}
+	my $i;
+	foreach $i (@_) {
+		print_IRC("KICK $chan $i $unick\n");
+	}
+}
+
+sub kickme {
+	return if ($level < 10);
+	chan_cmd("KICK","$unick\n",$_[0]);
+}
+
+sub banme {
+	return if ($level < 10);
+	chan_cmd("MODE","+b *!*$usermask\n",$_[0]);
+}
+
+sub unbanme {
+	return if ($level < 10);
+	chan_cmd("MODE","-b *!*$usermask\n",$_[0]);
+}
+
+sub chanmsg {
+	return if ($level < 200);
+	priv_msg($from,"<$unick> @_\n");
+}
+
+sub msgto {
+	return if ($level < 200);
+	my($a,$b);
+	($a,$b) = split(" ",join(" ",@_),2);
+	priv_msg($a,$b);
+}
+
+sub dice {
+	return if (($level < 10) || (@_ != 2));
+	return if ($_[0] > 100);
+	print_IRC("PRIVMSG $from :");
+	for($tmp=1;$tmp <= $_[0];$tmp++) {
+		print_IRC(int(rand($_[1]))+1);
+		print_IRC(" ");
+	}
+	print_IRC("\n");
+}
+
+sub update_key {
+	my($t,@a);
+	foreach $t (@channels) {
+		(@a) = split(":",$t);
+		if ($a[0] eq $from) {
+			$a[1] = $_[0];
+			$t = join(":",@a);
+			last;
+		}
+	}
+}
+
+sub page {
+	return if ($level < 200);
+	my($pto,$msg) = split(" ",join(" ",@_),2);
+	priv_msg($pto,chr(7)."<page from: $unick> $msg".chr(7));
+}
+
+sub join_channel {
+	my($i,$tmp,@a);
+	foreach $tmp (@channels) {
+		@a = split(":",$tmp);
+		if (lc($a[0]) eq lc($_[0])) {
+			print_IRC("JOIN $a[0] $a[1]\n");
+			return;
+		}
+	}
+	print_IRC("JOIN $_[0]\n");
+}
+
+sub dccget {
+	return if ($level < 50);
+
+	return if ((!$accept_dcc) || (!$a_dcc_rqst));
+
+	my $proto = getprotobyname('tcp');
+	my $port  = int rand(60000)+2000;
+
+	print_LOG("DCCget request from $uname as $unick for file $_[0]\n");
+
+	if ($_[0] =~ /\//) {
+		print_IRC("[dccget] requested file had a / in it\n");
+		priv_msg($from,"there my not be a / in the filename");
+		return;
+	}
+
+	$SIG{CHLD} = sub { wait };
+	if (!fork()) {
+		my(@a) = stat("./$dccdir/$_[0]");
+                my $fsize = $a[7];
+                if (!defined($fsize)) {
+                        print_LOG("dccget: file $_[0] not found\n");
+                        priv_msg($from,"$unick, file $_[0] not found");
+                        exit 0;
+                }
+
+		open(TEMPFILE,"./$dccdir/$_[0]");
+
+#		if (!defined(TEMPFILE)) {
+#			print_LOG("dccget: file $_[0] not found\n");
+#			priv_msg($from,"$unick, file $_[0] not found");
+#			exit 0;
+#		}
+#		my(@a) = stat(TEMPFILE);
+#		my $fsize = $a[7];
+#		if (!defined($fsize)) {
+#			print_LOG("dccget: file $_[0] not found\n");
+#			priv_msg($from,"$unick, file $_[0] not found");
+#			exit 0;
+#		}
+
+		if (!socket(Server, PF_INET, SOCK_STREAM, $proto)) {
+			print_LOG("dccget: error creating socket\n");
+			exit 0;
+		}
+#		print_LOG("socket created\n");
+
+		if (!setsockopt(Server, SOL_SOCKET, SO_REUSEADDR, pack("l",1))) {
+			print_LOG("dccget: error setting socket options\n");
+			exit 0;
+		}
+#		print_LOG("socket options set\n");
+
+		if (!bind(Server, sockaddr_in($port, INADDR_ANY))) {
+			print_LOG("dccget: error binding to port $port\n");
+			exit 0;
+		}
+#		print_LOG("socket bound\n");
+
+		if (!listen(Server,SOMAXCONN)) {
+			print_LOG("dccget: error listening\n");
+			exit 0;
+		}
+		print_LOG("[dccget:$port] server started\n");
+
+#		my($port,$iaddr) = sockaddr_in(Server);
+
+		ctcp_request($unick,"DCC","SEND $_[0] ".unpack("N",inet_aton("209.185.97.113"))." $port $fsize");
+
+		my $paddr = accept(Client,Server);
+
+		my($cport,$iaddr) = sockaddr_in($paddr);
+#		my $name = gethostbyaddr($iaddr,AF_INET);
+
+		print_LOG("[dccget:$port] connection from ".inet_ntoa($iaddr)." at port $cport\n");
+
+		my($aa,$fr,$i,$ack);
+		$fr = 0;
+		while ($fr < $fsize) {
+			$i = sysread(TEMPFILE,$aa,1024*8);
+			if (!defined($i)) {
+				print_LOG("[dccget:$port] client closed connection\n");
+				last;
+			}
+			$fr += $i;
+			syswrite(Client,$aa,$i);
+			sysread(Client,$ack,4);
+		}
+
+		print_LOG("[dccget:$port] connection done\n");
+
+		close(Client);
+		close(Server);
+		close(TEMPFILE);
+		exit 0;
+	}
+}
+
+sub DCC_send {
+	#$_[0] = "SEND"
+	#$_[1] = filename
+	#$_[2] = inet_aton(ip address)
+	#$_[3] = port
+	#$_[4] = size of file
+
+	my($ip,$proto,$ack,$d,$t,$iaddr,$paddr);
+
+	return if ((!$accept_dcc) || (!$a_dcc_send));
+
+	return if (index($_[1],"/") >= 0);# || ($level < $10));
+
+	$SIG{CHLD} = sub { wait };
+	if (!fork()) {
+
+	my(@a) = stat("./$dccdir/$_[1]");
+	if (defined($a[7])) {
+		priv_msg($from,"file $_[1] already exists");
+		print_LOG("[DCC_send] file already exists\n");
+		exit 0;
+	}
+
+	$iaddr = pack("N",$_[2]);
+	$ip    = inet_ntoa($iaddr);
+	$paddr = sockaddr_in($_[3],$iaddr);
+
+	print_LOG("DCC $_[0] $_[1] from $ip:$_[3] of size $_[4]\n");
+
+	$ack = 0;
+	open(DCCFILE,">./$dccdir/$_[1]");
+#	DCCFILE->autoflush(1);
+	$proto   = getprotobyname('tcp');
+	socket(SOCK, PF_INET, SOCK_STREAM, $proto) || return;
+	connect(SOCK, $paddr) || return;
+#	SOCK->autoflush(1);
+	select(SOCK); $| = 1;
+	while ($ack < $_[4]) {	#(($ack < $_[4]) && ($d = <SOCK>)) {
+		$ack += sysread(SOCK,$d,1024*10);
+		print DCCFILE $d;
+		$t = pack("N",$ack);
+		syswrite(SOCK,$t,4);
+	}
+	close(SOCK);
+
+	close(DCCFILE);
+
+	print_LOG("Done Receiving: $_[1]\n");
+
+	exit 0;
+
+	}
+}
+
+sub DCC_chat {
+	print_LOG("in DCC_chat\n");
+
+	if (!$accept_dcc) {
+		print_LOG("DCC chat not accepted\n");
+	}
+
+	my $iaddr = pack("N",$_[2]);
+	my $ip    = inet_ntoa($iaddr);
+	my $paddr = sockaddr_in($_[3],$iaddr);
+
+	print_LOG("DCC $_[0] from $ip:$_[3]\n");
+
+	my $proto   = getprotobyname('tcp');
+	socket(SOCK, PF_INET, SOCK_STREAM, $proto) || return;
+	connect(SOCK, $paddr) || return;
+	SOCK->autoflush(1);
+	select(SOCK);
+	$| = 1;
+	while (<SOCK>) {
+#		while ($block) {};
+#		$block = 1;
+		chomp $_;
+		print_LOG("FROM DCC:$_:\n");
+#		print SOCK "ECHO[$_]\n";
+#		$from = "=".SOCK;
+		priv_msg($from,"ECHO[$_]");
+#		$block = 0;
+	}
+	close(SOCK);
+}
+
+sub geturl {
+	return if ($#_ < 0);
+	return if ($level < $config{level_geturl});
+	my($i) = join(" ",@_);
+	priv_msg("url","$i");
+	$url_from = $from;
+}
+
+sub msg_CTCP_other {
+}
+
+sub msg_NOTICE {
+}
+
+sub ctcp_request {
+	my ($to,$cmd,$params) = @_;
+	print_IRC("PRIVMSG $to :".chr(1)."$cmd $params".chr(1)."\n");
+}
+
+sub ctcp_reply {
+	print_IRC("NOTICE $unick :".chr(1)."$_[0] $_[1]".chr(1)."\n");
+}
+
+#		print_LOG("unick:$unick   uname:$uname params:(".join(",",@params).")\n");
+# (channel, mode, params...)
+sub irc_MODE {
+	return if ($#_ < 1 || $_[0] eq "" || $_[1] eq "");
+
+	print_LOG("MODE for channel $_[0] changed by $unick ($uname): ".join(" ",@_[1..$#_])."\n");
+
+	my $chan = shift @_;
+	my $mode = shift @_;
+	my @params = @_;
+	my $sign = '+';
+	my $i,$c;
+
+	for($i = 0; $i < length($mode); $i++) {
+		$c = substr($mode,$i,1);
+		if ($c eq '+') {
+			$sign = $c;
+		} elsif ($c eq '-') {
+			$sign = $c;
+		} elsif ($c eq 'o') {
+			shift @params;
+		} elsif ($c eq 'k') {
+			if ($sign eq '+') {
+				set_channelkey($chan,shift @params);
+			} else {
+				shift @params;
+				set_channelkey($chan,"");
+			}
+		} elsif ($c eq 's') {
+		} elsif ($c eq 't') {
+		} elsif ($c eq 'n') {
+		} elsif ($c eq 'l') {
+			shift @params;
+		}
+	}
+}
+
+my($pre);
+sub msg_PRIVMSG {
+	my($co) = chr(1);
+	my($bp) = chr(7);
+	my($t,$cmd,@l);
+	$cmd = $_[0];
+	if (substr($cmd,0,1) eq chr(1)) {			# CTCP
+		my (@params);
+		$cmd = substr($cmd,1,length($cmd)-2);
+#		print_LOG("CTCP:$cmd\n");
+		my $i = index($cmd," ");
+		if ($i < 0) {
+			@params = ();
+			$pre = uc $cmd;
+		} else {
+			$pre = uc substr($cmd,0,$i);
+			$cmd = substr($cmd,$i+1,length($cmd));
+			$cmd =~ s/$co/?/g;
+			@params = split(/ /,$cmd);
+		}
+#		print_LOG("...$pre...@params...\n");
+		$pre = uc $pre;
+		print_LOG("CTCP from $unick:$pre:@params\n");
+		if ($pre eq "DCC") {
+			if ($level < 50) {
+				priv_msg($from,"I do not know you, so please don't try DCC again");
+			} else {
+				if ($params[0] eq "SEND") {
+					# $params[1] = filename
+					#    "    2  = inet_aton(ip address)
+					#    "    3  = port
+					#    "    4  = size of file
+					#    "    5  = crc?
+#					$SIG{CHLD} = sub { wait };
+#					if (!fork()) {
+						DCC_send(@params);
+#						exit 0;
+#					}
+				} elsif ($params[0] eq "CHAT") {
+					print_LOG("attempting to accept DCC chat\n");
+##					$t = new Thread \&DCC_chat,@params;
+##					print_LOG("New thread created for DCC chat: $t\n");
+				}
+			}
+		} elsif ($pre eq "VERSION") {
+			ctcp_reply("VERSION","$config{ctcpversion}");
+		} elsif ($pre eq "PING") {
+			ctcp_reply("PING","$params[0] $params[1]");
+		} elsif ($pre eq "TIME") {
+			ctcp_reply("TIME","".localtime(time));
+		} elsif ($pre eq "CLIENTINFO") {
+			if ($#params < 0) {
+				ctcp_reply("CLIENTINFO","UTC VERSION CLIENTINFO FINGER TIME PING ECHO OPS :Use CLIENTINFO <COMMAND> to get more specific information");
+			} else {
+				$cmd = uc($params[0]);
+				if ($cmd eq "ECHO") {
+					ctcp_reply("CLIENTINFO","ECHO returns the arguments it receives");
+				} elsif ($cmd eq "VERSION") {
+					ctcp_reply("CLIENTINFO","VERSION shows client type, version and environment");
+				} elsif ($cmd eq "CLIENTINFO") {
+					ctcp_reply("CLIENTINFO","CLIENTINFO gives information about available CTCP commands");
+				} elsif ($cmd eq "TIME") {
+					ctcp_reply("CLIENTINFO","TIME tells you the time on the user's host");
+				} elsif ($cmd eq "PING") {
+					ctcp_reply("CLIENTINFO","PING returns the arguments it receives");
+				} elsif ($cmd eq "FINGER") {
+					ctcp_reply("CLIENTINFO","FINGER shows real name, login name, and idle time of user");
+				} elsif ($cmd eq "OPS") {
+					ctcp_reply("CLIENTINFO","OPS ops the person if on userlist");
+				} elsif ($cmd eq "UTC") {
+					ctcp_reply("CLIENTINFO","UTC substitutes the local timezone");
+				} elsif ($cmd eq "UPTIME") {
+					ctcp_reply("CLIENTINFO","UPTIME my uptime");
+				} else {
+					ctcp_reply("ERRMSG","CLIENTINFO: ".join(" ",@params)." is not a valid function");
+				}
+			}
+		} elsif ($pre eq "ECHO") {
+			ctcp_reply("ECHO",join(" ",@params));
+		} elsif ($pre eq "FINGER") {
+			ctcp_reply("FINGER","$nick ($config{finger}) Idle ".(time-$idle)." seconds");
+		} elsif ($pre eq "UTC") {
+#			ctcp_reply("UTC",localtime($params[0])."");
+			priv_msg($unick,"".localtime($params[0]));
+		} elsif ($pre eq "UPTIME") {
+			ctcp_reply("UPTIME",(time - $uptime)." seconds");
+		} else {
+			msg_CTCP_other($pre,@params);
+		}
+	} else {
+		my ($params);
+		if ($config{logtext}) { print_TEXTLOG("$from:<$unick> $cmd\n"); };
+
+		if ($url_catch) {
+			my(@uu) = split(" ",$cmd);
+			foreach $tmp (@uu) {
+				my $i = lc($tmp);
+				open(TEMP,">>$urlfile");
+				if (($i =~ /http/) || ($i =~ /www\./) || ($i =~ /\.com/) ||
+				    ($i =~ /\.gov/) || ($i =~ /\.edu/) || ($i =~ /\.org/) ||
+				    ($i =~ /\.net/) || ($i =~ /\.fi/) || ($i =~ /ftp\./)) {
+					print TEMP "$tmp\n";
+				}
+				close(TEMP);
+			}
+		}
+
+		if (lc($from) eq "url") {
+			$cmd =~ s/$co/?/g;
+			$cmd =~ s/$bp/?/g;
+			priv_msg($url_from,"URL:$cmd");
+			$url_from = $unick;
+		} elsif (($level >= 250) && ($valid == 2) && (substr($cmd,0,4) eq "dop ")) {
+			$cmd = substr($cmd,4,length($cmd));
+			print_LOG($cmd."\n");
+			eval $cmd;
+		} elsif (($level >= 5)) {	# && !($cmd =~ /_/)) {# && !($cmd =~ /\W/)) {
+			my $i	= index($cmd," ");
+			my $j	= 0;
+			$tmp	= 1;
+			$params = "";
+			$cmd    =~ s/$co/?/g;
+			$cmd	=~ s/$bp/?/g;
+			if ($i < 0) {
+				$pre = quotemeta $cmd;
+			} else {
+				$pre = quotemeta substr($cmd,0,$i);
+				$cmd = substr($cmd,$i+1,length($cmd));
+
+				if ($pre =~ /^$nick.?$/i) {
+					$i   = index($cmd," ");
+					if ($i < 0) {
+						$pre = quotemeta $cmd;
+						$cmd = "";
+					} else {
+						$pre = quotemeta substr($cmd,0,$i);
+						$cmd = substr($cmd,$i+1,length($cmd));
+					}
+					$j = 1;
+#				} elsif (($cflags > 0) && ($cflags & 2 > 0)) {
+#					$tmp = 0;
+				}
+
+				@l = split(/ /,$cmd);
+				foreach $i (@l) {
+					$i = quotemeta $i;
+
+##					if (($i =~ /\W/) || ($i =~ /_/)) {
+#					if ($i =~ /_/) {
+#						$tmp = 0;
+#						last;
+#					}
+					$params = $params."\"".$i."\",";
+				}
+				chop $params; # get rid of last ,
+			}
+			if ((!$j) && ($cflags >= 0) && (($cflags & 2) > 0)) { $tmp = 0; };
+			if (($pre =~ /\W/) || ($pre =~ /_/)) { $tmp = 0; }
+			if (($tmp) && (($level > 10) || (($level >= 5) && ($pre eq "login")))) {
+				if ($config{logcommands}) {
+					print_LOG("&$pre($params)\n");
+				}
+				eval("&$pre($params)"); 
+			}
+		}
+	}
+}
+
+# connect_to(FILEHANDLE, "ip.address", port, nonblock);
+sub connect_to {
+	my($sin);
+#	print_LOG("Connecting to $_[1]:$_[2]\n");
+        my $ip = gethostbyname($_[1]);  
+        if (!$ip) {
+                $ip = inet_aton($_[1]);
+        }
+#	$sin = sockaddr_in($_[2], $ip);
+	socket($_[0], PF_INET, SOCK_STREAM, getprotobyname('tcp'));
+	if ($_[3]) {
+		print_LOG("Making the connection NONBLOCKING: ");
+		my $rc = fcntl($_[0], F_SETFL, O_NONBLOCK);
+		print_LOG("$rc\n");
+	}
+	connect($_[0], $sin);
+	select($_[0]);
+	$| = 1;
+	select(STDOUT);
+}
+
+sub irc_Connect {
+	local($handle);
+	my($host,$port) = split(':',$serverlist[$curserver]);
+
+	if (!$port) {
+		$port = 6667;
+	}
+
+	print_LOG("Connecting to $host:$port\n");
+
+#	connect_to(iSOCK,$host,$port,0);
+#	if (!defined(iSOCK)) {
+#		print_LOG("Cannot connect to $serverlist[$curserver]\n");
+#		return 0;
+#	}
+#	$handle = iSOCK;
+
+	my $hnd = IO::Socket::INET->new(Proto    => "tcp",
+					PeerAddr => $host,
+					PeerPort => $port) ||
+		return 0;
+#					LocalAddr => "camel.descolada.com") ||
+	$handle = $hnd;
+
+	print_LOG("Connected.. sending nick, name, and ident\n");
+
+	print_IRC("NICK $nick\n");
+	print_IRC("USER $config{botname} 0 0 :$config{ircname}\n");
+
+	return $handle;
+}
+
+sub IRC_connect {
+	my ($host,$port,$nick,$name,$ident) = @_;
+
+	print_LOG("Connecting to $host:$port\n");
+
+	my $hnd = IO::Socket::INET->new(Proto    => "tcp",
+					PeerAddr => $host,
+					PeerPort => $port,
+					LocalAddr => "209.228.7.241") ||
+		die "can't connect to port $port on $host: $!";
+
+##### OLD way of doing things #####
+#	my $iaddr = gethostbyname($host);
+#	my $paddr = sockaddr_in($port,$iaddr);
+#	socket(iSOCK, PF_INET, SOCK_STREAM, getprotobyname('tcp')) ||
+#		die "can't create socket";
+#	connect(iSOCK, $paddr) ||
+#		die "can't connect to port $port on $host: $!";
+#	$hnd = select(iSOCK); $| = 1;
+###################################
+
+	print_LOG("Setting \$hnd to non blocking\n");
+	my $rc = fcntl($hnd, F_SETFL, O_NONBLOCK);
+	print_LOG("Result: $rc\n");
+
+	$hnd->autoflush(1);
+	select($hnd); $| = 1;
+
+	print_LOG("Connected.. sending nick, name, and ident\n");
+
+	
+	print $hnd "NICK $nick\n";
+	print $hnd "USER $ident \"\" \"127.0.0.1\" :$name\n";
+
+	return $hnd;
+}
+
+sub fhbits {
+	local(@fhlist) = @_;
+	local($bits);
+	for (@fhlist) {
+		print_LOG(":$_:\n");
+		vec($bits,fileno($_),1) = 1;
+	}
+	$bits;
+}
+
+### ELIZA ###
+
+sub eliza {
+	return if ($level < 50);
+	return unless(@_);
+	priv_msg($from,$eliza->transform("@_"));
+}
+
+#
+#
+#
+########################## MAIN ########################
+#
+#
+#
+
+parse_config;
+
+$eliza = new Chatbot::Eliza "satel",$elizafile;
+
+&load_channels;
+&load_userlist;
+&load_messages;
+
+&open_LOG;
+
+#$handle = IRC_connect($host,$port,$nick,$name,$ident);
+
+#print_LOG("Connected.. sending nick, name, and ident\n");
+
+#print_IRC("NICK $nick\n");
+#print_IRC("USER $config{botname} 0 0 :$config{ircname}\n");
+
+for($i = 0; $i <= $#serverlist; $i++) {
+	$curserver = ($curserver + 1) % ($#serverlist + 1);
+	$handle = &irc_Connect;
+	last if ($handle);
+	print_LOG("Error Connecting, trying next server\n");
+}
+if (!$handle) {
+	print_LOG("Server list exhausted, nothing left to do but implode/die\n");
+	exit 0;
+}
+
+#STDOUT->autoflush(1);
+#STDERR->autoflush(1);
+select(STDERR); $| = 1;
+select(STDOUT); $| = 1;
+
+$SIG{HUP} = sub { print_IRC("QUIT :HUP\n"); sleep(1); close $handle; };
+$SIG{TERM} = sub { print_IRC("QUIT :TERM\n"); sleep(1); close $handle; next respawn; };
+$SIG{INT} = sub { print_IRC("QUIT :INT\n"); sleep(1); close $handle; $respawn = 0; };
+
+#my($line,$rin,$rout);
+while (defined ($line = <$handle>)) {
+#	my $rin = fhbits("iSOCK");
+
+#	$rin = '';
+#	$rout = '';
+#	vec($rin,fileno(iSOCK),1) = 1;
+#	select($rout=$rin, undef, undef, undef);
+
+#	if (vec($rout, fileno(iSOCK), 1)) {
+
+#	sysread(iSOCK,$line,1024);
+# 	if (!defined($line = <$handle>)) { last };
+#	print $line;
+
+ 	chomp $line; chomp $line;
+	($line) = split("\r",$line,2);
+#	if ($dumpraw) { print_LOG("$line\n"); }
+	if ($config{dumpraw}) { print-LOG("$line\n"); }
+
+	if ($line =~ /^:/) {
+		($pre,$line) = split(" ",$line,2);
+		$pre = substr($pre,1,length($pre)-1);
+		if (index($pre,"!") > 0) {
+			($unick,$useraddr) = split("!",$pre,2);
+			is_User($useraddr);
+			$usermask = $useraddr;
+			$usermask =~ tr/0123456789/??????????/;
+			$from = $unick;
+			$to = $nick;
+		} else {
+			$unick = "<SERVER>";
+			$uad = $pre;
+			$level = -1;
+			$uname = $pre;
+			$useraddr = $pre;
+			$usermask = $useraddr;
+			$usermask =~ tr/0123456789/??????????/;
+			$to = $nick;
+			$from = $unick;
+		}
+	} else {
+		$pre = "";
+		$unick = "<SERVER>";
+		$uad = "<SERVER>";
+		$level = -1;
+		$useraddr = "<SERVER>";
+		$usermask = "<SERVER>";
+		$from = "<SERVER>";
+		$to = $nick;
+	}
+	($cmd,$line) = split(" ",$line,2);
+	@params = ();
+
+	while ((defined($line)) && ($line ne "")) {
+		if ($line =~ /^:/) {
+			$i = substr($line,1,length($line)-1);
+			push @params,$i;
+			$line = "";
+		} else {
+			($i,$line) = split(" ",$line,2);
+			push @params,$i;
+		}
+	}
+	$to = $params[0];
+	if (uc($to) eq uc($nick)) {
+		$from = $unick;
+	} else {
+		$from = $to;
+	}
+
+	if ($from =~ /^#/) {
+		$cflags = get_channelflags($from);
+	} else {
+		$cflags = -1;
+	}
+
+	$cmd = uc $cmd;
+
+	if ($cmd eq "PING") {
+		print_IRC("PONG :@params\n");
+		if ($showpings) { print_LOG("PING? PONG!\n"); }
+	} elsif (($cmd eq "NOTICE") and ($unick eq "<SERVER>")) {
+		print_LOG("server NOTICE: @params\n");
+	} elsif ($cmd eq "001") {
+		$connected = 1;
+		print_LOG("Connected\n\n");
+		print_IRC("MODE $nick +i\n");
+		foreach $i (@channels) {
+			@tmp = split(":",$i);
+			print_IRC("JOIN $tmp[0] $tmp[1]\n");
+		}
+	} elsif ($cmd eq "002") {
+	} elsif ($cmd eq "003") {
+	} elsif ($cmd eq "004") {
+	} elsif ($cmd eq "251") {
+	} elsif ($cmd eq "252") {
+	} elsif ($cmd eq "253") {
+	} elsif ($cmd eq "254") {
+	} elsif ($cmd eq "255") {
+	} elsif ($cmd eq "265") {
+	} elsif ($cmd eq "266") {
+	} elsif ($cmd eq "331") {
+		print_LOG("<channel> :No topic is set\n");
+	} elsif ($cmd eq "332") {
+		print_LOG("Topic for $params[1]: $params[2]\n");
+	} elsif ($cmd eq "333") {
+		print_LOG("topic set by $params[2] [".localtime($params[3])."]\n");
+	} elsif ($cmd eq "353") {
+		print_LOG("NAMES: $params[3]\n");
+	} elsif ($cmd eq "366") {
+		print_LOG(":End of /NAMES list.\n");
+	} elsif ($cmd eq "372") {
+	} elsif ($cmd eq "375") {
+	} elsif ($cmd eq "376") {
+		print_LOG(":End of /MOTD command\n");
+	} elsif ($cmd eq "404") {
+		print_LOG("<channel name> :Cannot send to channel\n");
+	} elsif ($cmd eq "412") {
+	} elsif ($cmd eq "422") {
+		print_LOG(":MOTD File is missing\n");
+	} elsif ($cmd eq "433") {
+		print_LOG("<nick> :Nickname, $nick, is already in use\n");
+		$nick = "$nick\_";
+		print_IRC("NICK $nick\n");
+	} elsif ($cmd eq "436") {
+		print_LOG("<nick> :Nickname collision KILL\n");
+	} elsif ($cmd eq "451") {
+		print_LOG(":You have not registered\n");
+	} elsif ($cmd eq "465") {
+		print_LOG(":You are banned from this server\n");
+	} elsif ($cmd eq "475") {
+		print_LOG("<channel> :Cannot join channel (+k)\n");
+	} elsif ($cmd eq "482") {
+		print_LOG("<channel> :You're not channel operator\n");
+	} elsif ($cmd eq "NOTICE") {
+		$params[1] = "" if (!defined($params[1]));
+		print_LOG("NOTICE:$unick:$params[1]\n");
+		msg_NOTICE($params[1]);
+	} elsif ($cmd eq "PRIVMSG") {
+		msg_PRIVMSG($params[1]);
+	} elsif ($cmd eq "TOPIC") {
+		print_LOG("TOPIC of $params[0] set to \"$params[1]\" by $uname aka $unick from $useraddr\n");
+	} elsif ($cmd eq "QUIT") {
+		print_LOG("$pre has QUIT irc with message \"$params[0]\"\n");
+		set_validate($uname,0);
+	} elsif ($cmd eq "PART") {
+		print_LOG("$unick has left $params[0]\n");
+		set_validate($uname,0);
+	} elsif ($cmd eq "JOIN") {
+		set_validate($uname,0);
+		print_LOG("$unick($uname:$level) [$useraddr] has joined $params[0]\n");
+		if (($level >= $config{level_msg})) {# && ($biff)) {
+			check_new();
+		};
+		if ($level >= 10) {
+			if (($uflags & 1) || $autoop) {
+				print_LOG("+o $unick\n");
+				print_IRC("MODE $from +o $unick\n");
+			} elsif ($autovoice) {
+				print_LOG("+v $unick\n");
+				print_IRC("MODE $from +v $unick\n");
+			}
+#		} elsif ($autovoice) {
+#			print_IRC("MODE $from +v $unick\n");
+		}
+	} elsif ($cmd eq "KICK") {
+		print_LOG("$unick kicked $params[1] from $params[0] for \"$params[2]\"\n");
+		if ((uc($params[1]) eq uc($nick)) && ($autorejoin)) {
+			print_LOG("rejoining channel $from after $rejoindelay\n");
+			sleep $rejoindelay;
+			print_LOG("attempting to rejoin channel $from\n");
+			join_channel($from);
+		} elsif (lc($unick) ne lc($nick)) {
+			foreach $i (@channels) {
+				@tmp = split(":",$i);
+				last if (lc($params[0]) eq lc($tmp[0]));
+				@tmp = ("","","0");
+			}
+			print_LOG("channel $params[0] has flags set to $tmp[2]\n");
+			if ($level < 50) {
+				if (($cflags >= 0) && (($cflags & 1) > 0)) {
+					print_IRC("MODE $from -o $unick\n");
+					print_LOG("deopping $unick for kicking\n");
+				}
+#				if ($tmp[2] & 1 > 0) {
+#					print_IRC("MODE $from -o+b $unick *!*$usermask\n");
+#					print_LOG("bk:ing $unick for kicking without permission\n");
+#					print_IRC("KICK $from $unick :please don't do that\n");
+#				} elsif ($tmp[2] & 6 > 0) {
+#					print_IRC("KICK $from $unick :please don't do that\n");
+#					print_LOG("kicking $unick for kicking\n");
+#				} elsif ($tmp[2] & 8 > 0) {
+#					print_IRC("MODE $from -o $unick\n");
+#					print_LOG("deopping $unick for kicking\n");
+#				}
+#			} else {
+#				if ($tmp[2] & 4 > 0) {
+#					print_LOG("kicking $unick($uname) for kicking\n");
+#					print_IRC("KICK $from $unick :please don't do that\n");
+#				} elsif ($tmp[2] & 8 > 0) {
+#					print_IRC("MODE $from -o $unick\n");
+#					print_LOG("deopping $unick($uname) for kicking\n");
+#				}
+			}
+		}
+	} elsif ($cmd eq "MODE") {
+		irc_MODE(@params);
+	} elsif ($cmd eq "ERROR") {
+		print_LOG("SERVER ERROR: ".join(" ",@params)."\n");
+		print_LOG("closing connection to server\n");
+		last;
+	} elsif ($cmd eq "NICK") {
+		if ($unick eq $nick) {
+			print_LOG("my nick has been changed from $nick to $params[0]\n");
+			$nick = $params[0];
+		} else {
+			print_LOG("$unick($uname) changed their nick to $params[0]\n");
+		}
+	} else {
+		print_LOG("unknown command [$cmd](".join(",",@params).")\n");
+	}
+}
+close $handle;
+&save_messages;
+&save_userlist;
+&save_channels;
+&close_LOG();
+#
+#
+###############################################################################
+
+}

@@ -1,0 +1,121 @@
+# modified June 8th, 1998 - descolada
+#	* decided to keep track of changes and a to do list
+#	* added a flag to the userlist that allows
+#	  users access to only certain channels ($chanallow)
+#	* added url grabber
+#
+# modified June 9th, 1998 - descolada
+#	* modified &showlevel to let you do &showlevel <nick>
+#	  to show another users level
+#	* added &findurl to query a url from "url"
+#	* modified &defineword to use IO::Socket once again
+#	* modified url grabber to only save urls and not whole lines
+#
+# modified June 10th, 1998 - descolada
+#	* added &search_bugtraq
+#	* moved channels and keys to an external file, satel.channels
+#	  and added &save_channels and &load_channels
+#
+# modified June 11th, 1998 - descolada
+#	* fixed &defineword to look for char 128 at end of DEFINE
+#	  and to check for a SPELL to end last query
+#	* added &spellword
+#
+# modified June 12th, 1998 - descolada
+#	* added command &whoami to tell users their user names
+#	* added yarn game, not completed
+#	  variables added:
+#		@yarnstory   - current story
+#		@yarnplayers - player list for yarn
+#			"playername:score:voted/submitted(y/n)"
+#		@yarnlines   - submitted sentences
+#			"votes:player#:sentence"
+#		@yarnresults - results from last round
+#			"playername:scorechange:votes:playernumber:line"
+#		$yarnmod     - moderator of current game
+#		$yarntime    - unused at the moment
+#			       might be used later to limit time
+#			       taken to submit and vote
+#		$yarnstatus  - current status of the game
+#			0 - no game in progress, need to call yarnnew
+#			1 - game creates, but not yet started
+#			2 - waitting for sentences from players
+#			3 - waitting for players to vote
+#		$yarnchan    - channel for general game messages
+#		$yarnround   - round number of current game
+#		$yarnlevel   - level needed to play yarn
+#	  routines added:
+#		&yarnnew	 - creates a new game
+#		&yarnstart	 - starts the game after players have been added
+#		&yarnaddplayer	 - adds a player to the player list
+#		&yarnlistplayers - lists players names, score, and if voted/submitted
+#		&yarnshowlines	 - lists submitted sentences
+#		&yarnline	 - lets players submit a sentence
+#		&yarnvote	 - lets players vote
+#		&yarntellstory	 - shows the current story
+#		&yarn_resetyn	 - sets all players voted/submitted to "n"
+#		&yarn_reset	 - sets all variables to default values and stop current game
+#		&yarn_nextround	 - calculates results and sets up for the next round
+#
+# modified June 13th, 1998 - descolada
+#	* added boolean $dw_fork, if &defineword should fork for each request
+#	* fixed/finished/worked on YARN game
+#
+# modified June 15th, 1998 - descolada
+#	* fixed bug in yarn game where it msged the results to $from instead of $yarnchan
+#	* started work on the acro game
+#
+# modified June 6th, 1998 - descolada
+#	* rewrote main parsing and command processing code
+#
+# modified August 17th, 1998 - descolada
+#	* added a translator that uses babelfish.altavista.digital.com
+#	* changed help to use an external file, and to be more extensive..
+#	  and much better
+#
+# modified August 18th, 1998 - descolada
+#	* fixed a major bug that let people fake CTCP messagse from satel by
+#	  inserting char 1s in messages that would be "relayed"
+#	  and ^A in input is now converted to a ?
+#
+# modified August 29th, 1998 - descolada
+#	* implemented passwords, including 2 new routines
+#		set_validate(uname,valid) - changes the state of a users validity
+#		changepassword - lets a user change his password
+#		login - lets a user login
+#	* changed channel commands to accept a channel name as a parameter
+#
+# modified September 18th, 1998 - descolada
+#	* fixed forth_initdict to clear %dwords
+#	* added a few forth words
+#
+# modified September 19th, 1998 - descolada
+#	* added command "slashdotlist" to list current slashdot headlines
+#	* added command "slashdotread" to show info about an article
+#	* renamed "help" to "shelp" to clear up any confusion about "help"
+#	  comming up in normal conversation
+#
+# modified September 26th, 1998 - descolada
+#	* added command "findgroup" to search through the group list that
+#	  used to be up on the hornet archive
+#
+# modified October 11th, 1998 - descolada
+#	* added command "yarnremoveplayer" to remove a player from the game
+#	* added command "yarnchangemoderator" to let someone else moderate
+#	* changed "yarnaddplayer" to allow new players during game
+#	* fixed bug in yarnline that allowed same person to submit more than once
+#
+# modified November 7th, 1998 - descolada
+#	* split forth commands into satel_forth.pm
+#	* put general purpose routines into satel_global.pm
+#	  .. routines that will be used by external files
+#	* moved variables that are for one time configuration into satel_config.pm
+#	* moved yarn to satel_yarn.pm
+#	* fixed forth "+" and "*" to keep them from truncating
+#	* added forth word "word_and"
+#	* moved acro to satel_acro.pm
+#	* setup satel as a cvs project
+#	* put TODO list into satel.TODO
+#	* put to finish list into satel.TOFinish
+#	* put this updates list into satel.Updates
+#	  .. this format will change, since now cvs is being used

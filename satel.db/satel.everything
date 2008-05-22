@@ -1,0 +1,575 @@
+GIMP|the Gnu Image Manipulation Program
+GTK|the GIMP ToolKit
+GNU|NOT Unix
+Hurd|a Hird of Unix-Replacing Daemons
+Hird|a Hurd of Interfaces Representing Depth
+IRC|Internet Relay Chat|International Reply Coupon|<ph0n3r> IRC: I Repeat Class
+FSF|the Free Software Foundation
+GPL|the GNU General Public License
+satel|me.. and i'm an IRC bot|the bot of ol'
+Unix|That which is good and holy in the realm of OS|Unix _is_ user friendly. It's just very selective about who it's friends are. And sometimes even the best friends have fights -- William Stearns
+god|dead
+^$|null regex
+.il|Israel
+.ca|Canada, the biologically superior country.
+kafka|the most elite author ever -- do a findurl kafka
+kde|K Desktop Enviroment, something which kicks the shit out of GNOME.
+udp|User Datagram Protocol
+tcp|Transmission Control Protocol
+ip|Internet Protocol|an IP address, in the form of x.x.x.x for IPv4 or x:x:x:x:x:x for IPv6
+icmp|Internet Control Message Protocol
+tcpip|see tcp and ip.
+tcp/ip|see tcp and ip.
+ftp|File Transfer Protocol
+www|World Wide Web
+http|Hyper Text Transfer Protocol
+htcpcp|Hyper Text Coffee Pot Control Protocol
+ssh|Secure SHell
+rsh|Remote SHell
+rfc|Request For Comments
+ANSI|American National Standards Institute
+CIA|Central Intelligence Agency
+NSA|National Security Agency|was started by President Truman at 12:01 on November 4, 1952
+IETF|Internet Engineering Task Force
+FBI|Federal Bureau of Investigations
+CDA|Communications Decency Act
+bash|Bourne Again SHell
+tcsh|Tenex C SHell
+csh|C SHell
+monopoly|at www.microsoft.com|a cool board game
+microsoft|a monopoly|the most horrible fucking thing to ever happen to humanity
+knowledge|power
+Beast666|Aleister Crowley
+eine|Eine Is Not Emacs
+zwei|Zwei Was Eine Initially
+porn|the depiction of erotic behavior intended to cause sexual excitement
+ISO|the International Organization for Standardization|it is not an acronym, it is a prefix
+OSI|Open Systems Interconnection
+CRC|Cyclic Redundancy Check
+eris|the goddess of discord
+FAQ|Frequently Asked Questions
+mp3|MPEG Layer 3
+NIU|Northern Illinois University
+Slashdot|News for Nerds on Stuff that Matters (findurl slashdot)
+IBM|International Business Machines
+dxm|dextromethorphan
+SANE|Scanner Access Now Easy
+whatis|this command you fool
+ratm|Rage Against the Machine
+fsol|future sound of london
+KMFDM|Kill Mother Fucking Depeche Mode|No Pity for the Majority(in German)
+DM|depeche mode
+NWA|Niggers With Attitudes
+Natural Keyboard|a product brought to this world by satan himself.. as were WinModems
+Winmodem|a product brought to this world by satan himself.. as were natural keyboards
+SGI|Silicon Graphics Incorporated
+NCSC|National Computer Security Center
+AFOSI|Air Force Office of Special Investigations
+NIC|Network Information Center
+DARPA|Defense Advanced Research Projects Agency
+DES|Data Encryption Standard
+DOE|Department of Energy
+DOD|Department of Defense
+DOJ|Department of Justice
+IDEA|International Data Encryption Algorithm|was developed at ETH Zurich in Switzerland. It uses 128 bit keys, and is generally considered to be very secure.
+Caligari|the company the makes the rendering software Truespace (findurl caligari)
+RMS|Richard M. Stallman, FSF founder|Root Mean Square
+Truespace|a rendering software package
+GIMPS|Great Internet Mersenne Prime Search
+DNS|Domain Name Service
+SMTP|Simple Mail Transfer Protocol
+SNMP|Simple Network Management Protocol
+PiHex|A distributed effort to calculate Pi
+EMF|ElectroMotive Force|ElectroMagnetic Field
+ECM|Elliptic Curve Method|this method of factoring method has been used to find 43-digit factors, but nothing larger
+DWT|Discrete Weighted Transforms
+SETI|The Search for Extraterrestrial Intelligence
+.fi|Finland
+Finland|.fi|the best country in the world
+OGR|Optimal Golomb Ruler
+Golomb Ruler|a set of non-negative integers such that no two distinct pairs of numbers from the set have the same difference
+prime number|a number that has no factors except itself and one
+BNC|bohrs-neilman connector
+UTP|Unshielded Twisted Pair
+coax|coaxial cable
+RJ45|networking connector, usually used with UTP
+RJ11|connector type, used in phone jacks
+Newton's Method|a method of approximating roots of equations [ X(n+1)=Xn-f(Xn)/f'(Xn) ]
+.ch|confederation helvetique
+.se|sweden
+sweden|.se
+confederation helvetique|.ch
+switzerland|confederation helvetique|.ch
+.nl|netherlands
+netherlands|.nl
+FreeCIV|an implementation of Civilization II for UNIX/X released under the GNU Public License
+CBM|Commodore Business Machines
+DMV|Department of Motor Vehicles
+DMC|DeLorean Motor Company
+ADSL|Asynchronus Digital Subscriber Line
+Frodo|the free portable C64 emulator for BeOS/Unix/MacOS/AmigaOS/RiscOS/Win32
+.de|deutschland
+deutschland|.de
+GNOME|GNU Network Object Model Environment
+VNC|Virtual Network Computing
+Lycaeum|the world's largest entheogenic library and community
+ICL|Integrity Checked Linux
+S/Key|a one-time password system that provides authentication over networks that are subject to eavesdropping/reply attacks
+BGP|Border Gateway Protocol
+.ru|Russian Federation
+KHG|Linux Kernel Hacker's Guide
+z80|an 8-bit processor developed by Zilog
+NHL|National Hockey League
+FSGS|Free Starcraft Game Server
+BOFH|Bastard Operator From Hell
+USNO|United States Naval Observatory
+NIST|National Institute of Standards and Technology
+CBC|Cypher Block Chaining
+FQDN|Fully Qualified Domain Name
+PIC|an 8-bit microcontroller from Microchip Technology Inc.|Programmable Interrupt Controler
+Boustrophedon|a reading/writting style that alternates direction every line
+Boust|a text-reader that formats its input in boustrophedon
+LSAC|Law School Admission Council
+IMP|Interface Message Processor (router)
+TCSEC|Trusted Computer System Evaluation Criteria
+PGP|Pretty Good Privacy
+RSA|Rivest-Shamir-Adelman|is the most commonly used public key algorithm
+SHA|Secure Hash Algorithm|was published by the Unites States Government. It produces an 160 bit hash value from an arbitrary length string.
+MD5|Message Digest Algorithm 5
+MD4|Message Digest Algorithm 4
+MD2|Message Digest Algorithm 2
+DSS|Digital Signature Standard|is a signature-only mechanism endorsed by the United States Government. Its design has not been made public, and many people have found potential problems with it.
+SSL|Secure Socket Layer|a protocol for secure WWW connections (see also SHTTP)
+SHTTP|Secure Hypertext Transfer Protocol|a protocol for secure WWW connections (see also SSL)
+DNSSEC|Domain Name Server Security|is a protocol for secure distributed name services (draft-ietf-dnssec-secext-05.txt)
+GSSAPI|Generic Security Services API|it provides a generic authentication, key exchange, and encryption interface to different systems and authentication methods.
+S/MIME|Secure-MIME
+MSP|Message Security Protocol
+PKCS|Public Key Encryption Standards
+GNUPG|GNU Privacy Guard|is a complete and free replacement for PGP
+ELF|Executable and Linkable Format
+JFIF|JPEG File Interchange Format
+BSS|Block Started by Symbol|is the uninitialised data segment
+EBCDIC|Extended Binary Coded Decimal Interchange Code
+ASCII|American Standard Code for Information Interchange
+NVRAM|Non-Volatile RAM
+RAM|Random Access Memory
+EEPROM|Electrically Erasable Programmable Read-Only Memory
+EPROM|Erasable Programmable Read-Only Memory
+ROM|Read-Only Memory
+.tm|turkmenistan
+turkmenistan|.tm
+C64|Commodore 64|the best 8-bit computer in existence
+NetBSD|crap
+sparc|a 32 and 64-bit RISC microprocessor originally designed by Sun Microsystems, Inc.|stands for Scalable Processor ARChitecture
+daBot|a kick-ass REXX bot who would stay in #host and make fun of IXers. had a calc command identical to whatis
+smi|Sun Microsystems, Incorporated
+sun|Sun Microsystems, Incorporated
+peyote|a stimulant drug derived from mescal buttons|any of several American cacti (genus Lophophora); esp : MMESCAL
+nazi|a psychotic person who doesn't have very many brain cells
+pine|pine is not elm
+jerry|a race car driver
+Tommy the Cat|an awesome prowling machine
+NCP|NetCom Private
+CORBA|Common Object Request Broker Architecture
+ORB|Object Request Broker
+PDF|Portable Document Format
+Chapter 7 Bankruptcy|the chapter that: Allows individuals to keep certain exempt property while the remaining property is sold to repay creditors.
+Chapter 11 Bankruptcy|the chapter that: Allows a business to continue operations while formulating a plan to repay its creditors.
+Chapter 12 Bankruptcy|designed to meet the needs of financially distressed family farmers.
+Chapter 13 Bankruptcy|the chapter where: Creditors may be repaid, in full or in part, in installments over a three- to five-year period.
+FOLDOC|Free On-Line Dictionary Of Computing
+Sierpinski number|a positive, odd integer k for which the integers k*2**n+1 are all composite.
+Sierpinski problem|determining the smallest Sierpinski number
+twin prime|a pair of primes which differ by two
+Sieve of Eratosthenes|the most efficient way to find all the small primes (say all those less than 10,000,000) (ca 240 BC)
+Fermat's (big/last) Theorem|x**n+y**n=z**n has no solutions in positive integers x, y, z with n > 2
+Fermat's (little) Theorem|if p is a prime and if a is an integer, then a**p = a(mod p). In particular, if p does not divide a, then a**(p-1)=1(mod p).
+pseudoprime|a composite probable-prime
+Carmichael number|a composite integer "n" such that: "a**(n-1)=1(mod n)" for every integer "a" relatively prime to "n"
+a-SPRP|String Probable-Prime base a
+Mersenne prime|an integer in the form of 2**n-1 that is prime
+IOCCC|the International Obfuscated C Code Contest
+OSF|Open Source Foundation|was created by nine computer vendors, (Apollo, DEC, Hewlett-Packard, IBM, Bull, Nixdorf, Philips, Siemens, and Hitachi) to promote "Open Computing".
+EBC|Electronic CodeBook
+CFB|Cipher-FeedBack
+OFB|Output-FeedBack
+Blum integer|an integer that is the product of two primes that are both congruent to 3 modulo 4
+NFS|Network FileSystem|Number Field Sieve, the fastest-known factoring algorithm for number larger than 110 digits or so
+QS|Quadratic Sieve, the fastest-known factoring algorithm for number less than 110 digits
+amicable numbers|a pair of numbers that "contain" each other (the sum of the proper positive divisors of each, sum to the other)
+perfect number|a number whos positive divisors sum to itself
+ECPP|Elliptic Curve Primality Proving|is a modern method of primality proving that does not require factorizations
+Fibonacci prime|a Fibonacci number that is prime
+Sophie Germain prime|a prime p, when 2p+1 is also prime
+CTAK|CipherText Auto Key
+SWAG|Source Ware Archival Group
+gcc|Gnu C Compiler|it has renamed to Gnu Compiler Collection
+MAPS|Mail Abuse Protection System
+ibft|I Bleed For This? (see findurl ibft)
+qoole|Quake Object Oriented Level Editor
+FDDI|Fiber Distributed Data Interface
+HSSI|High Speed Serial Interface|DS3|(Hssi4/0/0 = slot 4 (veritcally), VIP slot 0 (horizontally), port 0 on the card)
+mirc|the lamest irc client in the world, but it's for windows.
+windows|a very lame OS, but it's from microsoft.
+light-on|1 aux@ or aux!
+light-off|1 invert aux@ and aux!
+BSA|Boy Scouts of America
+HDD|Hard Disk Drive
+HDA|Head-Disk Assembly
+CAP|Citizens Air Patrol
+CB|Citizens Band
+VHF|Very High Frequency
+UHF|Ultra High Frequency
+UFO|Unidentified Flying Object
+PB|Police Band
+DMT|Dimethyltryptamine
+THC|Tetrahydracannibinol
+MSM|Methylsulphonylmethane
+MSB|Most Significant Bit/Byte
+LSB|Least Significant Bit/Byte
+MRTG|Multi Router Traffic Grapher
+PSX|PlayStation something. no one knows what the x stands for, and everyone's too pansy assed to say "i don't know"
+OSS|Open Sound System
+IGMP|Internet Group Management Protocol|(rfc2236)
+ASIC|Application-Specific Integrated Circuit
+EGP|Exterior Gateway Protocol
+IGP|Interior Gateway Protocol
+diphenhydromine|found in over-the-counter antihistemines, cold and cough medicines, allergy medications and pain relievers that contain sleep aids|is anti-itch
+DTMF|Dual Tone Multi Frequency
+ACTS|Automated Coin Toll System
+COCOT|Customer Owned Coin Operated Telephone
+Blue box|Emulate a true operator by seizing a trunk with a 2600hz tone
+Brown box|Create a party line from 2 phone lines
+Beige box|Lineman's hand set
+Red box|MAke free phone calls from pay phones by generating ACTS tones
+Cheese box|Connect two phones to create a diverter
+Chartreuse box|steal electrical power from the phone line
+Black box|Allows the calling party to not be billed for the call placed
+Blotto box|mythical box that causes phone system outage over a large area
+Green box|Emulate the Coin Collect, Coin Return, and Ringback tones
+Mauve box|Phone tap without cutting into a line
+Olive box|External ringer
+Crimson box|Hold button
+Lunch box|AM transmitter|a box you carry food in for lunch time
+Bud box|Tap into your neighbors phone line
+White box|Portable DTMF keypad
+lunch|the midday meal
+ANAC|Automatic Number Announcement Circuit
+ANI|Automatic number identification
+NPA|Area Code|Numbering Plan Area
+CNA|Customer Name and Address
+LASS|Local Area Signalling Services
+SxS|Step by Step, an old phone signalling system
+CND|Calling Number Delivery
+OOB|Out Of Band
+ESS|Electronic Signaling System
+CPE|Customer Premises Equipment
+DAA|Data Access Arrangement
+PBX|Private Branch eXchange
+VMB|Voice Mail Box
+ESN|Electronic Serial Number
+MIN|Mobile Identification Number
+MTSO|Mobile Telephone Switching Office
+SCM|Station Class Mark
+SIDH|System Identification for Home System
+MVLP|Multi Line Variety Package
+CERT|Computer Emergency Response Team
+ACLU|American Civil Liberties Union
+EFF|Electronic Frontier Foundation
+IEEE|The Institute of Electrical and Electronics Engineers, INC.
+RLE|Run Length Encoding
+FM|Frequency Modulation
+AM|Amplitude Modulation
+ACK|Acknowledge
+ADC|Analog to Digital Converter
+CERN|a European laboratory for particle physics
+ALU|Arithmetical and Logical Unit
+DAC|Digital to Analog Converter
+AMD|Advanced Micro Devices
+ARLL|Advanced RLL
+ARRL|American Radio Relay League
+ASPI|Advanced SCSI Programming Interface
+IE|Internet Explorer
+EE|Electrical Engineer
+AT|Advanced Technology
+ATA|AT Attachment
+BASIC|Beginners All-purpose Symbolic Instruction Code
+BCD|Binary Coded Decimal
+BIOS|Basic Input/Output System
+POST|Power-On Self Test
+BIST|Built-In Self Test
+bit|Binary digIT
+AMSAT|Radio Amateur Satellite Corporation
+BPI|Bits Per Inch
+APRS|Automatic Position Radio System
+BPS|Bits Per Second
+GPS|Global Positioning System
+ARES|Amateur Radio Emergency Service
+AF|Audio Frequency
+CAD|Computer Aided Design
+CAM|Contents Adressable Memory|(to do with VideoCD rips) the vcd is recorded from a camcorder in a cinema.
+CSCE|Certificate of Successful Completion of Examination
+CAS|Column Address Strobe
+FCC|Federal Communications Commossion
+CCITT|Comit'e Consultatif Internationale de T'el'egraphique et T'el'ephonique|International Telegraph and Telephone Consulting Committee
+Gold box|Dialout router
+CCS|Common Command Set
+Urine box|Create a capacitative disturbance between the ring and tip wires in another's telephone headset
+CDI|CD Interactive
+UTC|Coordinated Universal Time
+CDROM|Compact Disk Read Only Memory
+HF|High Frequency
+OSCAR|Orbiting Satellite Carrying Amateur Radio
+PROM|Programmable Read-Only Memory
+CISC|Complex Instruction Set Computer
+CMOS|Complementary Metal Oxide Semiconductor
+LEO|Low Earth Orbit
+COBOL|COmmon Business Oriented Language
+PEP|Peak Envelope Power
+CPM|Control Program for Microcomputers
+SAR|Specific Absorption Rate
+SSB|Single-Sideband
+CPU|Central Processing Unit
+MPE|Maximum Permisible Exposure
+MARS|Military Affiliate Radio System
+MF|Medium Frequency
+USB|Upper Sideband|Universal Serial Bus
+VEC|Volunteer Examiner Coordinator
+OET|Office of Engineering & Technology
+CIDR|Classless Inter-Domain Routing
+CMIP|Common Management Information Protocol
+BOOTP|Bootstrap Protocol
+DTE|Data Terminal Equipment
+DCE|Data Circuit-terminating Equipment
+DAP|Directory Access Protocol
+BSD|Berkeley Software Distribution
+API|Application Programming Interface
+ARP|Address Resolution Protocol
+RARP|Reverse Address Resolution Protocol
+IANA|Internet Assigned Numbers Authority
+IAB|Internet Architecture Board
+GGP|Gateway-to-Gateway Protocol
+HDLC|High Level Data Link Control Protocol
+HIPPI|High Performance Parallel Interface
+HTML|HyperText Markup Language
+FYI|For Your Information
+MAC|Media Access Control|Mandatory Access Control|Message Authentication Code
+MIB|Management Information Base
+ISP|Internet Service Provider
+RIP|Routing Information Protocol
+SLIP|Serial Line Interface Protocol
+POP|Post Office Protocol
+PPP|Point-to-Point Protocol
+RTT|Round-Trip Time
+RPC|Remote Procedure Call
+RMON|Remote Network Monitor
+SRTT|Smoothed Round-Trip Time
+URL|Uniform Resource Locator
+URI|Uniform Resource Identifier
+SGML|Standard Generalized Markup Language
+TLI|Transport Layer Interface
+WAN|Wide Area Network
+TLA|Three Letter Acronym
+LOD|Legion of Doom
+TNO|The New Order
+LD|Long Distance
+BOC|Bell Operating Company
+DIPC|Distributed Inter-Process Communication
+NFR|Network Flight Recorder
+NORAD|North American Aerospace Defense Command
+CONAD|Continental Air Defense Command
+LDP|Linux Documentation Project
+AIM|AOL Instant Messenger
+ITAR|International Trade in Arms Regulations
+DWIM|Do What I Mean
+IDA|Interactive DisAssembler
+42|The ultimate answer to the ultimate question of life, the universe, and everything.
+FAE|Fuel-Air Explosive
+PDA|Portable Digital Assistant
+ACM|Association for Computer Machinery
+CEF|Cisco Express Forwarding
+SSE|Silicon Switching Engine
+CPAN|Comprehensive Perl Archive Network
+ACL|Access Control List
+NASDAQ|National Association of Securities Dealers Automated Quotations
+UO|Ultima Online
+OWO|Origin Worlds Online
+SOLID|SOftware Library for Interference Detection
+RAPID|Robust and Accurate Polygon Interference Detection
+GRUB|GRand Unified Bootloader
+NAT|Network Address Translation
+gnat|an annoying little insect
+FPGA|Field Programmable Gate Array
+FRAD|Frame Relay Access Device
+RNG|Random Number Generator
+RPN|Reverse Polish Notation
+AFK|Away From Keyboard
+MPEG|Motion Pictures Experts Group
+IRQ|Interrupt ReQuest
+UHS|Universal Hint System
+NMI|Non-Maskable Interrupt
+A20|Address line 20
+BPB|BIOS Parameter Block
+ABIOS|Advanced BIOS
+CBIOS|Compatibility BIOS
+CGA|Color/Graphics Adapter
+CP/M|Control Program for Microcomputers
+DCC|Display Combination Code
+DGIS|Direct Graphics Interface Standard
+DLL|Dynamic Link Library
+DMA|Direct Memory Access
+DPB|Drive Parameter Block
+DPL|DOS Parameter List
+DPMI|DOS Protected-Mode Interface
+DPMS|DOS Protected-Mode Services
+EGA|Enhanced Graphics Adapter
+EOI|End of Interrupt
+EISA|Enhanced Industry-Standard Architecture
+EMS|Expanded Memory Specification
+ESDI|Enhanced Small Device Interface
+FAT|File Allocation Table
+FCB|File Control Block
+FOSSIL|Fido/Opus/Seadog Standard Interface Layer
+HGC|Hercules Graphics Card
+HMA|High Memory Area
+I2C|Inter-Integrated Circuit
+IIC|(see I2C)
+IDE|Integrated Drive Electronics
+IDT|Interrupt Descriptor Table
+IFS|Installable File System
+IPC|Inter-Process Communication
+IPO|Initial Public Offering
+IPL|Initial Program Load
+IPX|Internetwork Packet Exchange
+ISA|Industry-Standard Architecture
+IVT|Interrupt Vector Table
+LCD|Liquid Crystal Display
+MCGA|Multi-Color Graphics Array
+MDA|Monochrome Display Adapter
+MIDI|Musical Instrument Digital Interface
+MODEM|MOdulator/DEmodulator
+MSR|Model-Specific Register
+OEM|Original Equipment Manufacturer
+PSP|Program Segment Prefix
+RGB|Red-Green-Blue
+RTC|Real-Time Clock
+SQL|Structured Query Language
+SMM|System Management Mode
+SPOOL|Simultaneous Peripheral Operation OnLine
+SVGA|Super VGA
+TSR|Terminate and Stay Resident
+UART|Universal Asyncronous Receiver/Transmitter
+UNC|Universal Naming Convention
+UMB|Upper Memory Block
+V86|Virtual-86 Mode
+VGA|Video Graphics Array
+VM|Virtual Machine
+XGA|Extended Graphics Array
+php|a server-side html embedded scripting language
+DSM|Diagnostic and Statistical Manual for mental disorders
+TNI|Telephone network interface
+GDC|Game Developers Conference
+FNB|fugly net bitch
+VAX|Virtual Address Extensions
+VMS|Virtual Memory Server
+CGMT|Chaos's GM Tool
+LSD|Lysergic acid Diethylamide
+Prolog|PROgramming in LOGic
+GGI|General Graphics Interface
+pthreads|Posix Threads
+OMU|One Man Unix
+LANE|LAN Emulator
+TOS|Terms of Service
+FUBAR|Failed UniBus Address Register|Fucked Up Beyond All Recognition
+foo|(see FUBAR)
+TACL|Tandem Advanced Command Language|is the shell language used in Tandem, computers.
+ntron|niggatron, dive's satel bot.
+SCUMM|Script Creation Utility for Maniac Mansion
+AGI|Adventure Game Interpreter
+SECC|Single Edge Contact Cartridge|is the board that the P2 processor is mounted on, which plugs into the Slot 1 CPU slot
+SEPP|Single Edge Processor Package|is the board that the Celeron processor is mounted on, which is compatible with the Slot 1 CPU slot
+Deschutes|the codename for the new Pentium II processors, ones that run at a bus speed of 100MHz
+Covington|the first Celeron CPU available on the market|contained no L2 cache
+Mendocino|the new Celeron design|it includes 128k of fully integrated L2 cache
+Klamath|the name of the first generation Pentium IIs
+IHTFP|I Hate This Fucking Place
+GPU|Graphics Processing Unit|is the Playstation's graphics controller
+GTE|Geometry Transform Engine|is a 3d co-processor for the Playstation
+MDEC|Motion DECode|is the Playstation's movie decoder
+PAM|Pluggable Authentication Modules
+LDAP|Lightweight Directory Access Protocol
+PKI|Public Key Infrastructure
+YMMV|Your Milage May Vary
+Genki|the code name for BeOS Release 4.5
+this|is necessary
+CINCSAC|Commander-in-Chief, Strategic Air Command
+SAC|Strategic Air Command
+reetreet|REET REET|REET REET IS FUCKIN REET
+Phong's Illumination Model|color = ambient + cos(x) * diffuse + cos(x)^n * specular|ambient is the color when no light strikes the object|diffuse defines the color of the object|specular defines the color of the highlight|Kd * (N dot L) + Ks * (R dot V)^n
+COA|Children of Alcoholics
+TEMPEST|Transient ElectroMagnetic Pulse Emanation STanard|may not actually be an acronym. The government states that it was just a code word originally given to the standards, and didn't have any particular meaning.|it is now known as EMSEC
+EMSEC|Emission Security
+USSR|Union of Soviet Socialist Republics
+CCCP|the Russian language counterpart to USSR
+nick|he's in 4th period physics, right after omni's 3rd period. omni doesn't like him.
+FLASH|FLexible Architecture for SHared memory
+IANAL|I am not a lawyer
+PHB|Pointy Haired Boss
+NTSB|National Transport Safety Board
+#reet|reet
+SDL|Simple DirectMedia Layer
+ACPI|Advanced Configuration & Power Interface
+Campus|code name for the SPARCstation 1 (4/60)
+Campus B|code name for the SPARCstation 1+ (4/65)
+DOS|Denial of Service
+LBL|   Ernest Orlando Lawrence Berkeley National Laboratory
+SCPC|Single Channel Per Carrier
+SIMD|Single Instruction Multiple Data (i.e. MMX, 3dnow!, KNI)
+PSK|Phase Shift Keying
+Datafellows|http://www.datafellows.com/
+IAAMOAC|"I am a member of a civilization"
+IDL|Interface Definition Language
+OCR|Optical Character Recognition
+Mac'n'Cheese|naked eating FUCKIN Mac'n'Cheese
+GLUT|OpenGL Utilities Toolkit|is pronounced like glut from gluttony
+dimensioning|indicating or determining size and position in space
+NURBS|Non-Uniform Rational B-Spline
+VRML|Virtual Reality Modeling Language
+SDML|Spacial Data modelling Language
+ICANN|Internet Corporation for Assigned Names and Numbers
+right handed coordinate system|when the z-axis is elevation (up)
+left handed coordinate system|when the y-axis is "elevation" (up)
+CSG|Constructive Solid Geometry
+iff|"if and only if"
+commutative law|"v1 + v2 = v2 + v1"
+associative law|"(v1 + v2) + v3 = v1 + (v2 + 3)"
+left distributive law|"(a + B) * v = a * v + B * v"
+right distributive law|"a * (v + w) = a * v + a * w"
+MAYA aka SGI's Wavefront|a very nice ( and expensive ) modelling program
+SAP|Second Audio Program
+Kinnematics|the science of motion which treats motion without regard to the forces which causes it
+DOF|Degrees of Freedom
+IK|Inverse Kinematics
+ICD|Installable Client Driver
+IHV|Independent Hardware Vendors
+.no|Norway
+TKO|Technical KnockOut
+USPS|United States Postal Service
+DHCP|Dynamic Host Configuration Protocol|(rfc2131)
+PDIP|Plastic Dual In-line Package
+PPA|Printing Performance Architecture
+PPA-3|Iomega's SCSI over parallel protocol|is also knows as VPI0 ( see VPI2 )
+LISP|LISt Programming|Lost In Stupid Paranthesis
+GC&CS|Government Code and Cypher School
+IOPL|Input/Output Privilege Level
+CPL|Current Privilege Level
+Telesync|(to do with VideoCD rips) recorded with a video camera professionaly in a projector room or empty cinema.
+Screener|(to do with VideoCD rips) convert from a Promotion VHS / LD or DVD. You can sometimes see the message such like "If you purchased or rented this cassette please contact 1-800-no-copys ...." and some of the movies in between will have few minutes where they become black and white.
+HMAC|Hash-based Message Authentication Code
+DH|Diffie-Hellman key negotiation
+rc|resource configuration
+RCMAC|Recent Change Memory Administration Center
+MSFC|Multilayer Switch Feature Card
+FCPGA|Flip Chip Pin Grid Array
+IDSL|ISDN Digital Subscriber Line

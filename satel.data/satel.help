@@ -1,0 +1,341 @@
+!LEVEL 5
+
+!COMMAND login [password]
+	login with [password] - no error message on invalid passwords
+
+!LEVEL 10
+
+!COMMAND chanprivs [channel]
+	tells you if you have privileges to get ops in or get the
+	key for a channel
+
+!COMMAND lastseen [name]
+	tells you when a person was last seen
+
+!COMMAND shelp
+	this help you fool
+
+!COMMAND banme
+	bans you from the channel where you use this command
+
+	see also: unbanme
+
+!COMMAND unbanme
+	unbans you in the channel where you use this command
+
+	see also: unbanme
+
+!COMMAND kickme
+	kicks you from the channel where you use this command
+
+!COMMAND dice [number of times] [sides on dice]
+	rolls dice
+
+!COMMAND showlevel <name>
+	shows your security level, or someone elses if a <name> was given
+
+!COMMAND defineword [to define]
+	looks up the definition for a word on muesli.ai.mit.edu:2627
+
+	see also: spellword
+
+!COMMAND spellword [to spell]
+	looks up the spelling for a word on muesli.ai.mit.edu:2627
+
+	see also: defineword
+
+!COMMAND checkmsgs
+	lists all messages for you
+
+	see also: readmsg, delmsg, sendmsg
+
+!COMMAND delmsg [msg # to delete]
+	delete a message by number
+
+	see also: checkmsgs, readmsg, sendmsg
+
+!COMMAND readmsg [msg # to read]
+	reads a message by number
+
+	see also: checkmsgs, delmsg, sendmsg
+
+!COMMAND sendmsg [name to send to] [message]
+	sends a message
+
+	see also: checkmsgs, delmsg, readmsg
+
+!COMMAND yarnnew [first line of story]
+	start a new game of yarn, making you the moderator
+
+!COMMAND yarnchangetopic [first line of story]
+	lets the moderator change the topic of the story
+	( the first sentance of the story )
+
+!COMMAND yarnaddplayer [player name]
+	lets the moderator add a player to the game
+
+!COMMAND yarnremoveplayer [player name]
+	lets the moderator remove a player from the game
+
+!COMMAND yarnchangemoderator [player name]
+	let the moderator choose someone else to be the new moderator
+
+!COMMAND yarnstart
+	start the game of yarn after topic has been chosen
+	and all players have been added to the game
+
+!COMMAND yarntellstory
+	prints out the story so far
+
+!COMMAND yarnlistplayers
+	lists all players in the game and their stats
+
+!COMMAND yarnlistlines
+	lists the lines that have been submitted for voting
+
+!COMMAND yarnline [sentence]
+	submit a sentence for voting
+
+!COMMAND yarnvote [line #]
+	votes for a submitted sentence by number
+
+!COMMAND whoami
+	tells you your username
+
+!COMMAND esptoeng [esperanto word]
+	translates from esperanto to english
+
+	see also: engtoesp, transit
+
+!COMMAND engtoesp [english word]
+	translates from english to esperanto
+
+	see also: esptoeng, transit
+
+!COMMAND changepassword [password]
+	changes your password
+
+!COMMAND findgroup [search string]
+	finds all demo groups matching the search string
+	gives group's web site
+
+!LEVEL 50
+
+!COMMAND getiweather [city] [country]
+	tells you the weather near a city, country
+	( outside of the U.S. )
+
+!COMMAND getweather [city] [state]
+	tells you the weather near a city, state
+	( inside the U.S. only )
+
+!COMMAND votetopics <topic #>
+	if topic # not given, then lists votes and tells you if you've
+	voted or not
+	if topic # IS given and you've voted then it tells the results
+	of the voting on that topic
+	if topic # IS given and you have not voted then it tells you
+	the possible selections you may vote for
+
+	see also: voteon, voteaddtopic
+
+!COMMAND voteon [topic #] [selection #]
+	lets you vote on a topic
+
+	see also: votetopics, voteaddtopic
+
+!COMMAND voteaddtopic [topic||response1||response2||...]
+	lets you add a voting topic
+	atleast two possibly choices must be given
+
+	see also: votetopics, voteon
+
+!COMMAND vote
+	voting system command, see: votetopics, voteon, voteaddtopic
+
+!COMMAND adduser [user name] [address1;address2;...]
+	lets you add a user of level 50
+	"user name" must only contain alphanumeric characters or an underscore
+
+!COMMAND chord [chord]
+	prints out the fingerings for the chord
+
+!COMMAND sop <channel> [nick1] [nick2] ...
+	ops people
+	channel is optional
+
+!COMMAND sdeop <channel> [nick1] [nick2] ...
+	deops people
+	channel is optional
+
+!COMMAND skick <channel> [nick1] [nick2] ...
+	kicks people
+	channel is optional 
+
+!COMMAND adddefine [it|what|what...]
+	adds a definition to the "whatis" database
+
+!COMMAND whatis [it]
+	tells you what "it" is
+
+!COMMAND forth [forth]
+	forth like code interpreter
+
+!COMMAND tellfortune <options>
+	tells a fortune, with <options> passed to /usr/games/fortune
+
+!COMMAND eliza [string]
+	lets you talk to eliza, the resident psychiatrist
+
+!COMMAND transit [language pair] [word(s) to translate]
+	translates to/from english from/to many other languages
+	languages pair should be one of the following
+		en_fr, en_de, en_it, en_pt, en_es, fr_en, de_en, it_en, es_en, pt_en
+	en = english, fr = french, de = german, it = italian, pt = portuguese, es = spanish
+
+	see also: engtoesp, esptoeng
+
+!COMMAND geturl [string]
+	msgs the [string] to the url bot, and relays you the answer
+
+!COMMAND opme
+	ops you in the channel where you used this command
+
+	see also: deopme
+
+!COMMAND deopme
+	deops you in the channel where you used this command
+
+	see also: opme
+
+!COMMAND voiceme
+	gives you a voice in the moderated channel where you used this command
+
+	see also: devoiceme
+
+!COMMAND devoiceme
+	takes away your voice in the moderated channel where you used this command
+
+	see also: voiceme
+
+!COMMAND showkey
+	shows the keys to the channels that you are allowed
+
+!COMMAND slashdotlist
+	lists the titles of all current slashdot articles
+
+	see also: slashdotread
+
+!COMMAND slashdotread [article #]
+	gives you info about the article
+
+	see also: slashdotlist
+
+!COMMAND findserial [program name]
+	searches for serial numbers for a program
+
+!COMMAND findurl [what]
+	searches for a url
+
+	see also: addurl,geturl
+
+!COMMAND addurl [what|where|where...]
+	adds a url to the database
+
+	see also: findurl
+
+!LEVEL 200
+
+!COMMAND addchannel [channel] [flags] [users] <key>
+	adds a channel
+
+	NOTE: flags must be a number
+	NOTE: there is currently no delchannel command
+
+!COMMAND channelinfo [channel]
+	tells everything about a channel
+
+!COMMAND channellist
+	lists the names of all channels the bot is in
+
+!COMMAND chanadduser [channel] [user]
+	adds a user to a channel's access list
+
+	see also: chandeluser
+
+!COMMAND chandeluser [channel] [user]
+	removes a user from a channel's access list
+
+	see also: chanadduser
+
+!COMMAND joinchannel [channel] <key>
+	makes satel join a channel
+	( channel is not added to channel list )
+
+!COMMAND partchannel [channel] <remove>
+	makes satel leave a channel
+	channel remains in userlist if it's there as long
+	as remove is undefined or 0
+
+!COMMAND cyclechannel [channel] <key>
+	makes satel leave a channel, wait 5 seconds, and rejoin
+
+!COMMAND setaddress [user] [address;list]
+	sets a users address ( user must have a level less than yours )
+
+!LEVEL 250
+
+!COMMAND setlevel [user] [level]
+	sets the level of a user
+
+!COMMAND set_level [username] [new level]
+	changes a users security level
+
+!COMMAND add_user [address mask] [username] [password] [access level] [flags]
+	adds a user to the userlist
+
+!COMMAND set_flags [username] [flags]
+	changes a users flags
+
+!COMMAND set_address [username] [address list]
+	changes the address mask list of a user
+
+!COMMAND send_file [mail server] [file to send] [subject] [domain of sender] [email address of sender] [email address of receiver]
+	sends a file by email
+
+!COMMAND send_filebyemail [to:email address] [filename]
+	sends a file by email
+
+!COMMAND cat_file [where to send] [file to cat]
+	cats a file to IRC
+
+!COMMAND save_userlist
+	saves the userlist
+
+!COMMAND load_userlist
+	loads the userlist
+
+!COMMAND save_channels
+	saves the channel list
+
+!COMMAND load_channels
+	loads the channel list
+
+!COMMAND save_messages
+	saves all messages
+
+!COMMAND load_messages
+	loads all messages
+
+!COMMAND set_channelkey [channel] [key]
+	sets a channel's key
+
+!COMMAND set_channelsecurity [channel] [security]
+	sets a channel's security level
+	0 - none
+	1 - kickban anyone who is not in the userlist for kicking
+	2 - 1 + kick anyone who is in the userlist for kicking
+
+!COMMAND yarn_reset
+	totally resets an on going game of Y.A.R.N
+
